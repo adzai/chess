@@ -48,8 +48,14 @@ def draw_pieces(screen, board, font, selected_piece):
             if piece:
                 selected = x == sx and y == sy
                 color, type = piece
-                s1 = font.render(type[0], True, pygame.Color('red' if selected else color))
-                s2 = font.render(type[0], True, pygame.Color('darkgrey'))
+                # s1 = font.render(type[0], True, pygame.Color('red' if selected else color))
+                # s2 = font.render(type[0], True, pygame.Color('darkgrey'))
+                if color == 'white' and type == 'pawn':
+                    s1 = pygame.image.load("sprites/whitePawn.png")
+                    s2 = pygame.image.load("sprites/whitePawn.png")
+                elif color == 'black' and type == 'pawn':
+                    s1 = pygame.image.load("sprites/blackPawn.png")
+                    s2 = pygame.image.load("sprites/blackPawn.png")
                 pos = pygame.Rect(BOARD_POS[0] + x * TILESIZE+1, BOARD_POS[1] + y * TILESIZE + 1, TILESIZE, TILESIZE)
                 screen.blit(s2, s2.get_rect(center=pos.center).move(1, 1))
                 screen.blit(s1, s1.get_rect(center=pos.center))
@@ -67,8 +73,15 @@ def draw_drag(screen, board, selected_piece, font):
             pygame.draw.rect(screen, (0, 255, 0, 50), rect, 2)
 
         color, type = selected_piece[0]
-        s1 = font.render(type[0], True, pygame.Color(color))
-        s2 = font.render(type[0], True, pygame.Color('darkgrey'))
+        # s1 = font.render(type[0], True, pygame.Color(color))
+        # s2 = font.render(type[0], True, pygame.Color('darkgrey'))
+        if color == 'white' and type == 'pawn':
+            s1 = pygame.image.load("sprites/whitePawn.png")
+            s2 = pygame.image.load("sprites/whitePawn.png")
+        elif color == 'black' and type == 'pawn':
+            s1 = pygame.image.load("sprites/blackPawn.png")
+            s2 = pygame.image.load("sprites/blackPawn.png")
+
         pos = pygame.Vector2(pygame.mouse.get_pos())
         screen.blit(s2, s2.get_rect(center=pos + (1, 1)))
         screen.blit(s1, s1.get_rect(center=pos))
