@@ -22,7 +22,7 @@ def create_board_surf():
     for y in range(8):
         for x in range(8):
             rect = pygame.Rect(x*TILESIZE, y*TILESIZE, TILESIZE, TILESIZE)
-            pygame.draw.rect(board_surf, pygame.Color('darkgrey' if dark else 'beige'), rect)
+            pygame.draw.rect(board_surf, pygame.Color('darkgrey' if dark else 'white'), rect)
             dark = not dark
         dark = not dark
     return board_surf
@@ -114,13 +114,14 @@ def draw_pieces(screen, board, font, selected_piece):
                 screen.blit(s1, s1.get_rect(center=pos.center))
 
 def draw_selector(screen, piece, x, y):
-    if piece != None:
+    if piece != None and piece != 0:
         rect = (BOARD_POS[0] + x * TILESIZE, BOARD_POS[1] + y * TILESIZE, TILESIZE, TILESIZE)
         pygame.draw.rect(screen, (255, 0, 0, 50), rect, 2)
 
 def draw_drag(screen, board, selected_piece, font):
-    if selected_piece:
+    if selected_piece and selected_piece[0] != 0:
         piece, x, y = get_square_under_mouse(board)
+        start_pos = x, y
         if x != None:
             rect = (BOARD_POS[0] + x * TILESIZE, BOARD_POS[1] + y * TILESIZE, TILESIZE, TILESIZE)
         pygame.draw.rect(screen, (0, 255, 0, 50), rect, 2)
@@ -171,12 +172,14 @@ def draw_drag(screen, board, selected_piece, font):
         screen.blit(s2, s2.get_rect(center=pos + (1, 1)))
         screen.blit(s1, s1.get_rect(center=pos))
         selected_rect = pygame.Rect(BOARD_POS[0] + selected_piece[1] * TILESIZE, BOARD_POS[1] + selected_piece[2] * TILESIZE, TILESIZE, TILESIZE)
-
         # debug drag line
         # pygame.draw.line(screen, pygame.Color('red'), selected_rect.center, pos)
-        return (x, y)
+        return (x, y, selected_piece[0], start_pos)
 
 def main():
+    column_to_letter = {0:'a', 1:'b', 2:'c', 3:'d', 4:'e', 5:'f',
+            6:'g', 7:'h'}
+    row_convert = {0:8, 1:7, 2:6, 3:5, 4:4, 5:3, 6:2, 7:1}
     pygame.init()
     font = pygame.font.SysFont('', 32)
     screen = pygame.display.set_mode((720, 720))
@@ -194,12 +197,22 @@ def main():
             if e.type == pygame.MOUSEBUTTONDOWN:
                 if piece != None:
                     selected_piece = piece, x, y
+                    start_piece = x, y
+            
             if e.type == pygame.MOUSEBUTTONUP:
                 if drop_pos:
-                    piece, old_x, old_y = selected_piece
-                    board[old_y][old_x] = 0
-                    new_x, new_y = drop_pos
-                    board[new_y][new_x] = piece
+                    moved_piece = drop_pos[2]
+                    drop_pos = drop_pos[0], drop_pos[1]
+                    if start_piece != drop_pos:
+                        lt1_pos = str(column_to_letter[start_piece[0]])
+                        row1_pos = str(row_convert[start_piece[1]]) 
+                        lt2_pos = str(column_to_letter[drop_pos[0]])
+                        row2_pos = str(row_convert[drop_pos[1]]) 
+                        print(lt1_pos + row1_pos + lt2_pos + row2_pos)
+                        piece, old_x, old_y = selected_piece
+                        board[old_y][old_x] = 0
+                        new_x, new_y = drop_pos
+                        board[new_y][new_x] = piece
                 selected_piece = None
                 drop_pos = None
 
@@ -208,7 +221,6 @@ def main():
         draw_pieces(screen, board, font, selected_piece)
         draw_selector(screen, piece, x, y)
         drop_pos = draw_drag(screen, board, selected_piece, font)
-
         pygame.display.flip()
         clock.tick(60)
 
