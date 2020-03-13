@@ -1,6 +1,18 @@
 import pygame
 
 
+wp = pygame.image.load("sprites/whitePawn.png")
+wk = pygame.image.load("sprites/whiteKing.png")
+wn = pygame.image.load("sprites/whiteKnight.png")
+wb = pygame.image.load("sprites/whiteBishop.png")
+wq = pygame.image.load("sprites/whiteQueen.png")
+wr = pygame.image.load("sprites/whiteRook.png")
+bp = pygame.image.load("sprites/blackPawn.png")
+bk = pygame.image.load("sprites/blackKing.png")
+bn = pygame.image.load("sprites/blackKnight.png")
+bb = pygame.image.load("sprites/blackBishop.png")
+bq = pygame.image.load("sprites/blackQueen.png")
+br = pygame.image.load("sprites/blackRook.png")
 surface = 720
 TILESIZE = surface / 8
 BOARD_POS = (10, 10)
@@ -29,7 +41,16 @@ def create_board():
         board.append([])
         for x in range(8):
             board[y].append(None)
-
+    board[0][0], board[0][7] = ('black', 'rook'), ('black', 'rook')
+    board[0][1], board[0][6] = ('black', 'knight'), ('black', 'knight')
+    board[0][2], board[0][5] = ('black', 'bishop'), ('black', 'bishop')
+    board[0][3] = ('black', 'queen')
+    board[0][4] = ('black', 'king') 
+    board[7][0], board[7][7] = ('white', 'rook'), ('white', 'rook')
+    board[7][1], board[7][6] = ('white', 'knight'), ('white', 'knight')
+    board[7][2], board[7][5] = ('white', 'bishop'), ('white', 'bishop')
+    board[7][3] = ('white', 'queen')
+    board[7][4] = ('white', 'king') 
     for x in range(0, 8):
         board[1][x] = ('black', 'pawn')
     for x in range(0, 8):
@@ -50,12 +71,44 @@ def draw_pieces(screen, board, font, selected_piece):
                 color, type = piece
                 # s1 = font.render(type[0], True, pygame.Color('red' if selected else color))
                 # s2 = font.render(type[0], True, pygame.Color('darkgrey'))
-                if color == 'white' and type == 'pawn':
-                    s1 = pygame.image.load("sprites/whitePawn.png")
-                    s2 = pygame.image.load("sprites/whitePawn.png")
-                elif color == 'black' and type == 'pawn':
-                    s1 = pygame.image.load("sprites/blackPawn.png")
-                    s2 = pygame.image.load("sprites/blackPawn.png")
+                if color == 'white':
+                    if type == 'pawn':
+                        s1 = wp
+                        s2 = wp
+                    if type == 'king':
+                        s1 = wk
+                        s2 = wk
+                    if type == 'knight':
+                        s1 = wn
+                        s2 = wn
+                    if type == 'bishop':
+                        s1 = wb
+                        s2 = wb
+                    if type == 'queen':
+                        s1 = wq
+                        s2 = wq
+                    if type == 'rook':
+                        s1 = wr
+                        s2 = wr
+                else:
+                    if type == 'pawn':
+                        s1 = bp
+                        s2 = bp
+                    if type == 'king':
+                        s1 = bk
+                        s2 = bk
+                    if type == 'knight':
+                        s1 = bn
+                        s2 = bn
+                    if type == 'bishop':
+                        s1 = bb
+                        s2 = bb
+                    if type == 'queen':
+                        s1 = bq
+                        s2 = bq
+                    if type == 'rook':
+                        s1 = br
+                        s2 = br
                 pos = pygame.Rect(BOARD_POS[0] + x * TILESIZE+1, BOARD_POS[1] + y * TILESIZE + 1, TILESIZE, TILESIZE)
                 screen.blit(s2, s2.get_rect(center=pos.center).move(1, 1))
                 screen.blit(s1, s1.get_rect(center=pos.center))
@@ -70,23 +123,57 @@ def draw_drag(screen, board, selected_piece, font):
         piece, x, y = get_square_under_mouse(board)
         if x != None:
             rect = (BOARD_POS[0] + x * TILESIZE, BOARD_POS[1] + y * TILESIZE, TILESIZE, TILESIZE)
-            pygame.draw.rect(screen, (0, 255, 0, 50), rect, 2)
+        pygame.draw.rect(screen, (0, 255, 0, 50), rect, 2)
 
         color, type = selected_piece[0]
         # s1 = font.render(type[0], True, pygame.Color(color))
         # s2 = font.render(type[0], True, pygame.Color('darkgrey'))
-        if color == 'white' and type == 'pawn':
-            s1 = pygame.image.load("sprites/whitePawn.png")
-            s2 = pygame.image.load("sprites/whitePawn.png")
-        elif color == 'black' and type == 'pawn':
-            s1 = pygame.image.load("sprites/blackPawn.png")
-            s2 = pygame.image.load("sprites/blackPawn.png")
+        if color == 'white':
+            if type == 'pawn':
+                s1 = wp
+                s2 = wp
+            if type == 'king':
+                s1 = wk
+                s2 = wk
+            if type == 'knight':
+                s1 = wn
+                s2 = wn
+            if type == 'bishop':
+                s1 = wb
+                s2 = wb
+            if type == 'queen':
+                s1 = wq
+                s2 = wq
+            if type == 'rook':
+                s1 = wr
+                s2 = wr
+        else:
+            if type == 'pawn':
+                s1 = bp
+                s2 = bp
+            if type == 'king':
+                s1 = bk
+                s2 = bk
+            if type == 'knight':
+                s1 = bn
+                s2 = bn
+            if type == 'bishop':
+                s1 = bb
+                s2 = bb
+            if type == 'queen':
+                s1 = bq
+                s2 = bq
+            if type == 'rook':
+                s1 = br
+                s2 = br
 
         pos = pygame.Vector2(pygame.mouse.get_pos())
         screen.blit(s2, s2.get_rect(center=pos + (1, 1)))
         screen.blit(s1, s1.get_rect(center=pos))
         selected_rect = pygame.Rect(BOARD_POS[0] + selected_piece[1] * TILESIZE, BOARD_POS[1] + selected_piece[2] * TILESIZE, TILESIZE, TILESIZE)
-        pygame.draw.line(screen, pygame.Color('red'), selected_rect.center, pos)
+
+        # debug drag line
+        # pygame.draw.line(screen, pygame.Color('red'), selected_rect.center, pos)
         return (x, y)
 
 def main():
