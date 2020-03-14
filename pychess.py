@@ -1,6 +1,8 @@
+import chess
 import pygame
 
 
+board_text = chess.Board()
 wp = pygame.image.load("sprites/whitePawn.png")
 wk = pygame.image.load("sprites/whiteKing.png")
 wn = pygame.image.load("sprites/whiteKnight.png")
@@ -181,8 +183,10 @@ def main():
             6:'g', 7:'h'}
     row_convert = {0:8, 1:7, 2:6, 3:5, 4:4, 5:3, 6:2, 7:1}
     pygame.init()
-    font = pygame.font.SysFont('', 32)
     screen = pygame.display.set_mode((720, 720))
+    font = pygame.font.Font('freesansbold.ttf', 40)
+    text = font.render('Game Over!', True, (255, 0, 0))
+    textRect = text.get_rect(center=screen.get_rect().center) 
     board = create_board()
     board_surf = create_board_surf()
     clock = pygame.time.Clock()
@@ -208,11 +212,19 @@ def main():
                         row1_pos = str(row_convert[start_piece[1]]) 
                         lt2_pos = str(column_to_letter[drop_pos[0]])
                         row2_pos = str(row_convert[drop_pos[1]]) 
-                        print(lt1_pos + row1_pos + lt2_pos + row2_pos)
-                        piece, old_x, old_y = selected_piece
-                        board[old_y][old_x] = 0
-                        new_x, new_y = drop_pos
-                        board[new_y][new_x] = piece
+                        uci = lt1_pos + row1_pos + lt2_pos + row2_pos
+                        print(uci)
+                        print(board_text.legal_moves)
+                        legal = chess.Move.from_uci(uci) in board_text.legal_moves
+                        if legal:
+                            board_text.push_uci(uci)
+                            piece, old_x, old_y = selected_piece
+                            board[old_y][old_x] = 0
+                            new_x, new_y = drop_pos
+                            board[new_y][new_x] = piece
+                        if board_text.is_game_over():
+                            board_surf.blit(text, textRect)  
+                            print('checkm8')
                 selected_piece = None
                 drop_pos = None
 
