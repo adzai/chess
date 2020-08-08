@@ -1,3 +1,4 @@
+#!/bin/python
 import pygame
 import chess
 
@@ -16,6 +17,7 @@ SPRITES = {
     'r': pygame.image.load("sprites/blackRook.png"),
 }
 
+# TODO: Settings menu
 SURFACE = 720
 TILESIZE = SURFACE // 8
 BOARD_POS = (0, 0)
@@ -33,10 +35,6 @@ class Square():
         self.x = x
         self.y = y
         self.can_use = True
-
-
-def get_board_pos():
-    return BOARD_POS
 
 
 def create_board_surf():
@@ -63,6 +61,7 @@ def get_square_under_mouse(board):
     return Square()
 
 
+# Populates the board matrix with fen notation
 def fen_to_board(fen_str, king_squares):
     board = []
     new_fen_str = ""
@@ -88,6 +87,7 @@ def fen_to_board(fen_str, king_squares):
     return board
 
 
+# Blue selector, highlighting a square under the mouse
 def draw_selector(screen, piece):
     if piece.can_use:
         rect = (BOARD_POS[0] + piece.x * TILESIZE, BOARD_POS[1] +
@@ -95,6 +95,8 @@ def draw_selector(screen, piece):
         pygame.draw.rect(screen, (0, 0, 255, 50), rect, 2)
 
 
+# Takes x and y coordinates from the board matrix
+# and transforms them into the uci notation
 def board_to_uci(initial_square, drop_square):
     column_to_letter = {0: 'a', 1: 'b', 2: 'c', 3: 'd', 4: 'e', 5: 'f',
                         6: 'g', 7: 'h'}
@@ -115,6 +117,7 @@ def board_to_uci(initial_square, drop_square):
     return uci, promotion
 
 
+# Draws a red square when a king is in check
 def draw_king_check(screen, board, piece, king_squares):
     x, y = king_squares[piece]
     rect = (BOARD_POS[0] + y * TILESIZE, BOARD_POS[1] + x *
@@ -135,6 +138,8 @@ def draw_pieces(screen, board, initial_square):
                     screen.blit(s1, s1.get_rect(center=pos.center))
 
 
+# Draws dragged piece and highlighting legal moves with green
+# square selectors, illegal with red
 def draw_drag(screen, board, initial_square, board_text):
     if initial_square.can_use:
         square_under_mouse = get_square_under_mouse(board)
@@ -156,6 +161,8 @@ def draw_drag(screen, board, initial_square, board_text):
     return initial_square
 
 
+# Draws black selectors for rects with promotion choices under the mouse,
+# returns the chosen promotion piece as a fen char
 def get_promotion_piece(screen, queen_rect, rook_rect,
                         knight_rect, bishop_rect, button_up=False):
     y = range(250, 410)
@@ -183,6 +190,7 @@ def get_promotion_piece(screen, queen_rect, rook_rect,
             pygame.draw.rect(screen, (0, 0, 0, 255), bishop_rect, 1)
 
 
+# Draws the choice menu for promotion of a piece
 def promotion_loop(screen, color):
     clock = pygame.time.Clock()
     if color:
