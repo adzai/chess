@@ -2,6 +2,7 @@ import chess
 import pygame
 import board_utils
 
+
 def main():
     board_text = chess.Board()
     pygame.init()
@@ -32,16 +33,18 @@ def main():
             if e.type == pygame.MOUSEBUTTONUP:
                 if drop_square.can_use:
                     if initial_square != drop_square:
-                        uci, promotion = board_utils.board_to_uci(initial_square,
-                                                      drop_square)
+                        uci, promotion = board_utils.board_to_uci(
+                            initial_square, drop_square)
                         legal = chess.Move.from_uci(uci) in \
                             board_text.legal_moves
                         if legal:
                             if promotion:
-                                uci = uci[:-1] + board_utils.promotion_loop(screen, white)
+                                uci = uci[:-1] + board_utils.promotion_loop(
+                                    screen, white)
                             promotion = False
                             board_text.push_uci(uci)
-                            rect_board = board_utils.fen_to_board(board_text.fen(), king_squares)
+                            rect_board = board_utils.fen_to_board(
+                                board_text.fen(), king_squares)
                             white = not white
                         if board_text.is_game_over():
                             board_surf.blit(check_mate_text,
@@ -51,12 +54,15 @@ def main():
         screen.blit(board_surf, BOARD_POS)
         board_utils.draw_pieces(screen, rect_board, initial_square)
         board_utils.draw_selector(screen, square_under_mouse)
-        drop_square = board_utils.draw_drag(screen, rect_board, initial_square, board_text)
+        drop_square = board_utils.draw_drag(
+            screen, rect_board, initial_square, board_text)
         if board_text.is_check():
             if white:
-                board_utils.draw_king_check(screen, rect_board, 'K', king_squares)
+                board_utils.draw_king_check(
+                    screen, rect_board, 'K', king_squares)
             else:
-                board_utils.draw_king_check(screen, rect_board, 'k', king_squares)
+                board_utils.draw_king_check(
+                    screen, rect_board, 'k', king_squares)
         pygame.display.flip()
         clock.tick(60)
 

@@ -20,6 +20,7 @@ SURFACE = 720
 TILESIZE = SURFACE // 8
 BOARD_POS = (0, 0)
 
+
 class Square():
     def __init__(self, fen_char=None, x=None, y=None, can_use=False):
         self.fen_char = fen_char
@@ -32,6 +33,7 @@ class Square():
         self.x = x
         self.y = y
         self.can_use = True
+
 
 def get_board_pos():
     return BOARD_POS
@@ -181,7 +183,6 @@ def get_promotion_piece(screen, queen_rect, rook_rect,
             pygame.draw.rect(screen, (0, 0, 0, 255), bishop_rect, 1)
 
 
-
 def promotion_loop(screen, color):
     clock = pygame.time.Clock()
     if color:
@@ -230,6 +231,3 @@ def promotion_loop(screen, color):
                     knight_rect, bishop_rect, button_up=True)
                 return promotion_piece
         clock.tick(60)
-
-
-
