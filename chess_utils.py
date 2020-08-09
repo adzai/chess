@@ -1,6 +1,9 @@
 #!/bin/python
 import pygame
 import chess
+import chess.polyglot
+import ai
+from collections import defaultdict
 
 
 class Square():
@@ -39,43 +42,73 @@ class Game():
         initial_square = Square()
         drop_square = Square()
         white = True
+        white_maximizing = False
+        prev_move = ["", "", "", ""]
+        i = 0
+        value = 0
         while True:
-            square_under_mouse = board.get_square_under_mouse()
-            events = pygame.event.get()
-            for e in events:
-                if e.type == pygame.QUIT:
-                    return
-                if e.type == pygame.MOUSEBUTTONDOWN:
-                    if square_under_mouse.can_use:
-                        initial_square.set_square(square_under_mouse.fen_char,
-                                                  square_under_mouse.x,
-                                                  square_under_mouse.y)
-                if e.type == pygame.MOUSEBUTTONUP:
-                    if drop_square.can_use:
-                        if initial_square != drop_square:
-                            uci, promotion = board.board_to_uci(
-                                initial_square, drop_square)
-                            legal = chess.Move.from_uci(uci) in \
-                                board.board_text.legal_moves
-                            if legal:
-                                if promotion:
-                                    # add extra uci notation if a player is
-                                    # promoting and draw the promotion
-                                    # choice menu
-                                    uci = uci[:-1] + board.promotion_loop(
-                                        self.screen, white)
-                                promotion = False
-                                board.board_text.push_uci(uci)
-                                board.rect_board = board.fen_to_board()
-                                white = not white
-                            if board.board_text.is_game_over():
-                                board.board_surf.blit(
-                                    self.check_mate_text,
-                                    self.check_mate_text_rect)
-                    initial_square.can_use = False
-                    drop_square.can_use = False
+            if not white:
+                opening_moves = []
+                with chess.polyglot.open_reader("/home/adam/downloads/Eman.bin") as reader:
+                    for entry in reader.find_all(board.board_text):
+                        opening_moves.append(entry.move)
+                print(opening_moves)
+                if len(opening_moves) > 0:
+                    board.board_text.push(opening_moves[0])
+                else:
+                    mv = board.minimax(3, -10000, 10000, True, white_maximizing, prev_move[i])
+                    prev_move[i] = mv[1]
+                    value = mv[0]
+                    print("Val:", value)
+                    print("Move:", mv[1])
+                    i += 1
+                    i %= 4
+                    board.board_text.push_uci(mv[1])
+                    white_mv = board.minimax(2, -10000, 10000, True, True, prev_move[i])
+                    print(f"White_recommended move: {white_mv[1]}, value: {white_mv[0]}")
+                white = not white
+                if board.board_text.is_game_over():
+                    board.board_surf.blit(
+                        self.check_mate_text,
+                        self.check_mate_text_rect)
+                board.rect_board = board.fen_to_board()
+            else:
+                square_under_mouse = board.get_square_under_mouse()
+                events = pygame.event.get()
+                for e in events:
+                    if e.type == pygame.QUIT:
+                        return
+                    if e.type == pygame.MOUSEBUTTONDOWN:
+                        if square_under_mouse.can_use:
+                            initial_square.set_square(square_under_mouse.fen_char,
+                                                      square_under_mouse.x,
+                                                      square_under_mouse.y)
+                    if e.type == pygame.MOUSEBUTTONUP:
+                        if drop_square.can_use:
+                            if initial_square != drop_square:
+                                uci, promotion = board.board_to_uci(
+                                    initial_square, drop_square)
+                                legal = chess.Move.from_uci(uci) in \
+                                    board.board_text.legal_moves
+                                if legal:
+                                    if promotion:
+                                        # add extra uci notation if a player is
+                                        # promoting and draw the promotion
+                                        # choice menu
+                                        uci = uci[:-1] + board.promotion_loop(
+                                            self.screen, white)
+                                    promotion = False
+                                    board.board_text.push_uci(uci)
+                                    board.rect_board = board.fen_to_board()
+                                    white = not white
+                                if board.board_text.is_game_over():
+                                    board.board_surf.blit(
+                                        self.check_mate_text,
+                                        self.check_mate_text_rect)
+                        initial_square.can_use = False
+                        drop_square.can_use = False
             self.screen.blit(board.board_surf, board.board_pos)
-            board.draw_pieces(self.screen, initial_square)
+            board.draw_pieces(self.screen)
             board.draw_selector(self.screen, square_under_mouse)
             drop_square = board.draw_drag(
                 self.screen, initial_square)
@@ -114,11 +147,97 @@ class Board():
             'q': pygame.image.load("sprites/blackQueen.png"),
             'r': pygame.image.load("sprites/blackRook.png"),
             }
+        self.position_value_map = {
+            'P': [0,  0,  0,  0,  0,  0,  0,  0,
+             50, 50, 50, 50, 50, 50, 50, 50,
+             10, 10, 20, 30, 30, 20, 10, 10,
+              5,  5, 10, 27, 27, 10,  5,  5,
+              0,  0,  0, 25, 25,  0,  0,  0,
+              5, -5,-10,  0,  0,-10, -5,  5,
+              5, 10, 10,-25,-25, 10, 10,  5,
+              0,  0,  0,  0,  0,  0,  0,  0
+            ],
+            'N': 
+            [-50,-40,-30,-30,-30,-30,-40,-50,
+            -40,-20,  0,  0,  0,  0,-20,-40,
+            -30,  0, 10, 15, 15, 10,  0,-30,
+            -30,  5, 15, 20, 20, 15,  5,-30,
+            -30,  0, 15, 20, 20, 15,  0,-30,
+            -30,  5, 10, 15, 15, 10,  5,-30,
+            -40,-20,  0,  5,  5,  0,-20,-40,
+            -50,-40,-30,-30,-30,-30,-40,-50],
+            'B': [
+                -20,-10,-10,-10,-10,-10,-10,-20,
+                -10,  0,  0,  0,  0,  0,  0,-10,
+                -10,  0,  5, 10, 10,  5,  0,-10,
+                -10,  5,  5, 10, 10,  5,  5,-10,
+                -10,  0, 10, 10, 10, 10,  0,-10,
+                -10, 10, 10, 10, 10, 10, 10,-10,
+                -10,  5,  0,  0,  0,  0,  5,-10,
+                -20,-10,-10,-10,-10,-10,-10,-20],
+            'R': [
+                0,  0,  0,  0,  0,  0,  0,  0,
+                  5, 10, 10, 10, 10, 10, 10,  5,
+                 -5,  0,  0,  0,  0,  0,  0, -5,
+                 -5,  0,  0,  0,  0,  0,  0, -5,
+                 -5,  0,  0,  0,  0,  0,  0, -5,
+                 -5,  0,  0,  0,  0,  0,  0, -5,
+                 -5,  0,  0,  0,  0,  0,  0, -5,
+                  0,  0,  0,  5,  5,  0,  0,  0
+            ],
+            'Q': [
+                -20,-10,-10, -5, -5,-10,-10,-20,
+                -10,  0,  0,  0,  0,  0,  0,-10,
+                -10,  0,  5,  5,  5,  5,  0,-10,
+                 -5,  0,  5,  5,  5,  5,  0, -5,
+                  0,  0,  5,  5,  5,  5,  0, -5,
+                -10,  5,  5,  5,  5,  5,  0,-10,
+                -10,  0,  5,  0,  0,  0,  0,-10,
+                -20,-10,-10, -5, -5,-10,-10,-20
+            ],
+            'K': [
+                -30,-40,-40,-50,-50,-40,-40,-30,
+                -30,-40,-40,-50,-50,-40,-40,-30,
+                -30,-40,-40,-50,-50,-40,-40,-30,
+                -30,-40,-40,-50,-50,-40,-40,-30,
+                -20,-30,-30,-40,-40,-30,-30,-20,
+                -10,-20,-20,-20,-20,-20,-20,-10,
+                 20, 20,  0,  0,  0,  0, 20, 20,
+                 20, 30, 10,  0,  0, 10, 30, 20
+                    ],
+            'E': [
+                 -50,-40,-30,-20,-20,-30,-40,-50,
+                 -30,-20,-10,  0,  0,-10,-20,-30,
+                 -30,-10, 20, 30, 30, 20,-10,-30,
+                 -30,-10, 30, 40, 40, 30,-10,-30,
+                 -30,-10, 30, 40, 40, 30,-10,-30,
+                 -30,-10, 20, 30, 30, 20,-10,-30,
+                 -30,-30,  0,  0,  0,  0,-30,-30,
+                 -50,-30,-30,-30,-30,-30,-30,-50
+            ],
+        }
+        self.value_map = {
+            'R': 500,
+            'N': 320,
+            'B': 330,
+            'Q': 900,
+            'K': 20000,
+            'P': 100,
+            'r': 500,
+            'n': 320,
+            'b': 330,
+            'q': 900,
+            'k': 20000,
+            'p': 100,
+            }
 
     def board_init(self):
         self.board_text = chess.Board()
         self.rect_board = self.fen_to_board()
         self.board_surf = self.create_board_surf()
+        for c in 'pnbrqke':
+            self.position_value_map[c] = self.position_value_map[c.upper()][::-1]
+
 
     def make_pygame_rect(self, x, y, offset=0):
         return pygame.Rect(x * self.tilesize + offset,
@@ -209,7 +328,7 @@ class Board():
                                      self.board_pos[1] + x)
         pygame.draw.rect(screen, (255, 0, 0, 50), rect, 2)
 
-    def draw_pieces(self, screen, initial_square):
+    def draw_pieces(self, screen):
         for y in range(8):
             for x in range(8):
                 piece = self.rect_board[y][x]
@@ -321,3 +440,68 @@ class Board():
                         knight_rect, bishop_rect, button_up=True)
                     return promotion_piece
             clock.tick(60)
+
+    def static_eval(self, fen_str, white_maximizing):
+        white, black = 0, 0
+        for i, char in enumerate(fen_str):
+            if char == ' ':
+                if white_maximizing:
+                    black = - black
+                else:
+                    white = - white
+                return white + black, ''
+            elif char.isupper():
+                try:
+                    white += self.value_map[char]
+                    white += self.position_value_map[char][i]
+                except KeyError:
+                    pass
+            else:
+                try:
+                    black += self.value_map[char]
+                    black += self.position_value_map[char][i]
+                except KeyError:
+                    pass
+
+    def minimax(self, depth, alpha, beta, maximizing_player, white_maximizing, prev_move, best_move=''):
+        if depth == 0 or self.board_text.is_game_over():
+            return self.static_eval(self.board_text.fen(), white_maximizing)
+        elif maximizing_player:
+            max_ev = -1000000
+            # every new move is independent, thus could be parallelized
+            for move in self.board_text.legal_moves:
+                self.board_text.push_uci(str(move))
+                if self.board_text.is_checkmate() and depth == 3:
+                    print('mate')
+                    self.board_text.pop()
+                    return 100000, str(move)
+                ev, new_move = self.minimax(depth - 1, alpha, beta, not maximizing_player, white_maximizing, prev_move, best_move)
+                if self.board_text.is_check():
+                    ev += 2
+                self.board_text.pop()
+                if str(move) != prev_move:
+                    if ev > max_ev:
+                        best_move = str(move)
+                        max_ev = ev
+                else:
+                    ev -= 10
+                    if ev > max_ev:
+                        best_move = str(move)
+                        max_ev = ev
+                alpha = max(alpha, ev)
+                if beta <= alpha:
+                    break
+            return max_ev, best_move
+        else:
+            min_ev = 1000000
+            for move in self.board_text.legal_moves:
+                self.board_text.push_uci(str(move))
+                ev, new_move = self.minimax(depth - 1, alpha, beta, not maximizing_player, white_maximizing, prev_move, best_move)
+                self.board_text.pop()
+                if ev < min_ev:
+                    best_move = str(move)
+                    min_ev = ev
+                alpha = min(beta, ev)
+                if beta <= alpha:
+                    break
+            return min_ev, best_move
