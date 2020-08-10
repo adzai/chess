@@ -41,32 +41,34 @@ class Game():
     def game_loop(self, board):
         initial_square = Square()
         drop_square = Square()
+        # False for ai with white pieces
         white = True
-        white_maximizing = False
-        prev_move = ["", "", "", ""]
-        i = 0
+        player_turn = True
+        white_maximizing = not player_turn
         value = 0
+        square_under_mouse = Square(None, None, None, False)
+        last_square = None
+        ai_played_square = None
         while True:
-            if not white:
+            if not player_turn and not board.board_text.is_game_over():
                 opening_moves = []
-                with chess.polyglot.open_reader("/home/adam/downloads/Eman.bin") as reader:
+                with chess.polyglot.open_reader("Eman.bin") as reader:
                     for entry in reader.find_all(board.board_text):
                         opening_moves.append(entry.move)
-                print(opening_moves)
                 if len(opening_moves) > 0:
                     board.board_text.push(opening_moves[0])
+                    ai_played_square = str(opening_moves[0])[2:4]
                 else:
-                    mv = board.minimax(3, -10000, 10000, True, white_maximizing, prev_move[i])
-                    prev_move[i] = mv[1]
+                    mv = board.minimax(3, -10000, 10000, True, white_maximizing)
                     value = mv[0]
                     print("Val:", value)
                     print("Move:", mv[1])
-                    i += 1
-                    i %= 4
+                    ai_played_square = mv[1][2:4]
                     board.board_text.push_uci(mv[1])
-                    white_mv = board.minimax(2, -10000, 10000, True, True, prev_move[i])
+                    white_mv = board.minimax(2, -10000, 10000, True, True)
                     print(f"White_recommended move: {white_mv[1]}, value: {white_mv[0]}")
                 white = not white
+                player_turn = not player_turn
                 if board.board_text.is_game_over():
                     board.board_surf.blit(
                         self.check_mate_text,
@@ -91,6 +93,7 @@ class Game():
                                 legal = chess.Move.from_uci(uci) in \
                                     board.board_text.legal_moves
                                 if legal:
+                                    last_square = drop_square
                                     if promotion:
                                         # add extra uci notation if a player is
                                         # promoting and draw the promotion
@@ -101,6 +104,7 @@ class Game():
                                     board.board_text.push_uci(uci)
                                     board.rect_board = board.fen_to_board()
                                     white = not white
+                                    player_turn = not player_turn
                                 if board.board_text.is_game_over():
                                     board.board_surf.blit(
                                         self.check_mate_text,
@@ -108,6 +112,10 @@ class Game():
                         initial_square.can_use = False
                         drop_square.can_use = False
             self.screen.blit(board.board_surf, board.board_pos)
+            if last_square and not player_turn:
+                board.draw_last_piece_player(self.screen, last_square)
+            if ai_played_square and player_turn:
+                board.draw_last_piece_ai(self.screen, ai_played_square)
             board.draw_pieces(self.screen)
             board.draw_selector(self.screen, square_under_mouse)
             drop_square = board.draw_drag(
@@ -328,6 +336,24 @@ class Board():
                                      self.board_pos[1] + x)
         pygame.draw.rect(screen, (255, 0, 0, 50), rect, 2)
 
+    def draw_last_piece_ai(self, screen, square):
+        letter_to_column = {'a': 0, 'b': 1, 'c': 2, 'd': 3, 'e': 4, 'f': 5,
+                            'g': 6, 'h': 7}
+        row_convert = {8: 0, 7: 1, 6: 2, 5: 3, 4: 4, 3: 5, 2: 6, 1: 7}
+        x = letter_to_column[square[0]] 
+        y = row_convert[int(square[1])] 
+        rect = self.make_pygame_rect(self.board_pos[0] + x,
+                                     self.board_pos[1] + y)
+        pygame.draw.rect(screen, (0, 0, 0, 50), rect, 2)
+
+
+    def draw_last_piece_player(self, screen, square):
+        x = square.x
+        y = square.y
+        rect = self.make_pygame_rect(self.board_pos[0] + x,
+                                     self.board_pos[1] + y)
+        pygame.draw.rect(screen, (0, 0, 0, 50), rect, 2)
+
     def draw_pieces(self, screen):
         for y in range(8):
             for x in range(8):
@@ -450,44 +476,36 @@ class Board():
                 else:
                     white = - white
                 return white + black, ''
+            elif not char.isalpha():
+                continue
             elif char.isupper():
-                try:
-                    white += self.value_map[char]
-                    white += self.position_value_map[char][i]
-                except KeyError:
-                    pass
+                white += self.value_map[char]
+                white += self.position_value_map[char][i]
             else:
-                try:
-                    black += self.value_map[char]
-                    black += self.position_value_map[char][i]
-                except KeyError:
-                    pass
+                black += self.value_map[char]
+                black += self.position_value_map[char][i]
 
-    def minimax(self, depth, alpha, beta, maximizing_player, white_maximizing, prev_move, best_move=''):
+    def minimax(self, depth, alpha, beta, maximizing_player, white_maximizing, best_move=''):
         if depth == 0 or self.board_text.is_game_over():
             return self.static_eval(self.board_text.fen(), white_maximizing)
         elif maximizing_player:
             max_ev = -1000000
-            # every new move is independent, thus could be parallelized
+            # could be parallelized for the first layer maybe
             for move in self.board_text.legal_moves:
-                self.board_text.push_uci(str(move))
+                self.board_text.push(move)
                 if self.board_text.is_checkmate() and depth == 3:
                     print('mate')
                     self.board_text.pop()
                     return 100000, str(move)
-                ev, new_move = self.minimax(depth - 1, alpha, beta, not maximizing_player, white_maximizing, prev_move, best_move)
+                ev, new_move = self.minimax(depth - 1, alpha, beta, not maximizing_player, white_maximizing, best_move)
+                if self.board_text.is_checkmate():
+                    ev += 501
                 if self.board_text.is_check():
-                    ev += 2
+                    ev += 15
                 self.board_text.pop()
-                if str(move) != prev_move:
-                    if ev > max_ev:
-                        best_move = str(move)
-                        max_ev = ev
-                else:
-                    ev -= 10
-                    if ev > max_ev:
-                        best_move = str(move)
-                        max_ev = ev
+                if ev > max_ev:
+                    best_move = str(move)
+                    max_ev = ev
                 alpha = max(alpha, ev)
                 if beta <= alpha:
                     break
@@ -495,8 +513,10 @@ class Board():
         else:
             min_ev = 1000000
             for move in self.board_text.legal_moves:
-                self.board_text.push_uci(str(move))
-                ev, new_move = self.minimax(depth - 1, alpha, beta, not maximizing_player, white_maximizing, prev_move, best_move)
+                self.board_text.push(move)
+                ev, new_move = self.minimax(depth - 1, alpha, beta, not maximizing_player, white_maximizing, best_move)
+                if self.board_text.is_checkmate():
+                    ev -= 501
                 self.board_text.pop()
                 if ev < min_ev:
                     best_move = str(move)
