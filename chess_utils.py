@@ -2,9 +2,6 @@
 import pygame
 import chess
 import chess.polyglot
-import ai
-from collections import defaultdict
-
 
 class Square():
     def __init__(self, fen_char=None, x=None, y=None, can_use=False):
@@ -21,12 +18,6 @@ class Square():
 
 
 class Game():
-    def __init(self):
-        self.clock = None
-        self.screen = None
-        self.font = None
-        self.check_mate_text = None
-        self.check_mate_text_rect = None
 
     def game_init(self, screen_width, screen_height):
         pygame.init()
@@ -37,8 +28,26 @@ class Game():
                                                 (255, 0, 0))
         self.check_mate_text_rect = self.check_mate_text.get_rect(
             center=self.screen.get_rect().center)
+        #default settings
+        self.screen_width = 720
+        self.screen_height = 720
+        self.black = (0,0,0)
+        self.white = (255,255,255)
+        self.grey = (192, 192, 192)
+        self.beige = (245,245,220)
+        self.bright_red = (255,0,0)
+        self.bright_green = (0,255,0)
+        self.block_color = (53,115,255)
+        self.game_display = pygame.display.set_mode((self.screen_width, self.screen_height))
+        self.board = Board(self.screen_width, (0, 0))
+        self.board = self.board.board_init()
 
     def game_loop(self, board):
+        pygame.display.set_caption('PyChess')
+        self.game_intro()
+
+
+    def chess_game_loop(self, ai):
         initial_square = Square()
         drop_square = Square()
         # False for ai with white pieces
@@ -50,32 +59,32 @@ class Game():
         last_square = None
         ai_played_square = None
         while True:
-            if not player_turn and not board.board_text.is_game_over():
+            if ai and (not player_turn and not self.board.board_text.is_game_over()):
                 opening_moves = []
                 with chess.polyglot.open_reader("Eman.bin") as reader:
-                    for entry in reader.find_all(board.board_text):
+                    for entry in reader.find_all(self.board.board_text):
                         opening_moves.append(entry.move)
                 if len(opening_moves) > 0:
-                    board.board_text.push(opening_moves[0])
+                    self.board.board_text.push(opening_moves[0])
                     ai_played_square = str(opening_moves[0])[2:4]
                 else:
-                    mv = board.minimax(3, -10000, 10000, True, white_maximizing)
+                    mv = self.board.minimax(3, -10000, 10000, True, white_maximizing)
                     value = mv[0]
                     print("Val:", value)
                     print("Move:", mv[1])
                     ai_played_square = mv[1][2:4]
-                    board.board_text.push_uci(mv[1])
-                    white_mv = board.minimax(2, -10000, 10000, True, True)
+                    self.board.board_text.push_uci(mv[1])
+                    white_mv = self.board.minimax(2, -10000, 10000, True, True)
                     print(f"White_recommended move: {white_mv[1]}, value: {white_mv[0]}")
                 white = not white
                 player_turn = not player_turn
-                if board.board_text.is_game_over():
-                    board.board_surf.blit(
+                if self.board.board_text.is_game_over():
+                    self.board.board_surf.blit(
                         self.check_mate_text,
                         self.check_mate_text_rect)
-                board.rect_board = board.fen_to_board()
+                self.board.rect_board = self.board.fen_to_board()
             else:
-                square_under_mouse = board.get_square_under_mouse()
+                square_under_mouse = self.board.get_square_under_mouse()
                 events = pygame.event.get()
                 for e in events:
                     if e.type == pygame.QUIT:
@@ -88,49 +97,115 @@ class Game():
                     if e.type == pygame.MOUSEBUTTONUP:
                         if drop_square.can_use:
                             if initial_square != drop_square:
-                                uci, promotion = board.board_to_uci(
+                                uci, promotion = self.board.board_to_uci(
                                     initial_square, drop_square)
                                 legal = chess.Move.from_uci(uci) in \
-                                    board.board_text.legal_moves
+                                    self.board.board_text.legal_moves
                                 if legal:
                                     last_square = drop_square
                                     if promotion:
                                         # add extra uci notation if a player is
                                         # promoting and draw the promotion
                                         # choice menu
-                                        uci = uci[:-1] + board.promotion_loop(
+                                        uci = uci[:-1] + self.board.promotion_loop(
                                             self.screen, white)
                                     promotion = False
-                                    board.board_text.push_uci(uci)
-                                    board.rect_board = board.fen_to_board()
+                                    self.board.board_text.push_uci(uci)
+                                    self.board.rect_board = self.board.fen_to_board()
                                     white = not white
                                     player_turn = not player_turn
-                                if board.board_text.is_game_over():
-                                    board.board_surf.blit(
+                                if self.board.board_text.is_game_over():
+                                    self.board.board_surf.blit(
                                         self.check_mate_text,
                                         self.check_mate_text_rect)
                         initial_square.can_use = False
                         drop_square.can_use = False
-            self.screen.blit(board.board_surf, board.board_pos)
+            self.screen.blit(self.board.board_surf, self.board.board_pos)
             if last_square and not player_turn:
-                board.draw_last_piece_player(self.screen, last_square)
-            if ai_played_square and player_turn:
-                board.draw_last_piece_ai(self.screen, ai_played_square)
-            board.draw_pieces(self.screen)
-            board.draw_selector(self.screen, square_under_mouse)
-            drop_square = board.draw_drag(
+                self.board.draw_last_piece_player(self.screen, last_square)
+            if ai:
+                if ai_played_square and player_turn:
+                    self.board.draw_last_piece_ai(self.screen, ai_played_square)
+            elif last_square and player_turn:
+                self.board.draw_last_piece_player(self.screen, last_square)
+
+            self.board.draw_pieces(self.screen)
+            self.board.draw_selector(self.screen, square_under_mouse)
+            drop_square = self.board.draw_drag(
                 self.screen, initial_square)
             # draw a req square around the king if he is in check
-            if board.board_text.is_check():
+            if self.board.board_text.is_check():
                 if white:
-                    board.draw_king_check(
+                    self.board.draw_king_check(
                         self.screen, 'K')
                 else:
-                    board.draw_king_check(
+                    self.board.draw_king_check(
                         self.screen, 'k')
             pygame.display.flip()
             self.clock.tick(60)
 
+
+    def text_objects(self, text, font):
+        text_surface = font.render(text, True, self.black)
+        return text_surface, text_surface.get_rect()
+
+    def button(self, msg,x,y,w,h,ic,ac,action=None, ai=None):
+        mouse = pygame.mouse.get_pos()
+        click = pygame.mouse.get_pressed()
+        if x+w > mouse[0] > x and y+h > mouse[1] > y:
+            pygame.draw.rect(self.game_display, ac,(x,y,w,h))
+
+            if click[0] == 1 and action != None:
+                action(ai)
+        else:
+            pygame.draw.rect(self.game_display, ic,(x,y,w,h))
+
+        small_text = pygame.font.SysFont("comicsansms",50)
+        text_surf, textRect = self.text_objects(msg, small_text)
+        textRect.center = ( (x+(w//2)), (y+(h//2)) )
+        self.game_display.blit(text_surf, textRect)
+
+
+    def game_intro(self):
+
+        intro = True
+
+        while intro:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    quit()
+                    
+            # Calculate menu dimensions
+            top_gap = self.screen_height // 4
+            bottom_gap = self.screen_height // 8
+            x = (self.screen_width//4) 
+            rect_total_height = self.screen_height - (top_gap + bottom_gap)
+            rect_height = rect_total_height // 4
+            gap =  rect_height // 8
+            rect_height -= gap
+            y = top_gap
+
+            self.game_display.fill(self.beige)
+            large_text = pygame.font.SysFont("comicsansms",90)
+            text_surf, text_rect = self.text_objects("PyChess", large_text)
+            text_rect.center = ((self.screen_width//2),(top_gap//2))
+            self.game_display.blit(text_surf, text_rect)
+
+            self.button("Player vs Player",x,y,self.screen_width//2,rect_height,self.grey,self.bright_green,self.chess_game_loop, ai=False)
+            y += gap + rect_height
+            self.button("Player vs Ai",x,y,self.screen_width//2,rect_height,self.grey,self.bright_green,self.chess_game_loop, ai=True)
+            y += gap + rect_height
+            self.button("Settings",x,y,self.screen_width//2,rect_height,self.grey,self.bright_green,self.chess_game_loop)
+            y += gap + rect_height
+            self.button("Exit",x,y,self.screen_width//2,rect_height,self.grey,self.bright_red,self.quitgame)
+
+            pygame.display.update()
+            self.clock.tick(15)
+
+    def quitgame(self):
+        pygame.quit()
+        quit()
 
 class Board():
     def __init__(self, surface, board_pos):
@@ -138,9 +213,6 @@ class Board():
         self.king_squares = {'k': [0, 0], 'K': [0, 0]}
         self.tilesize = surface / 8
         self.board_pos = board_pos
-        self.board_text = None
-        self.rect_board = None
-        self.board_surf = None
         self.sprites = {
             'P': pygame.image.load("sprites/whitePawn.png"),
             'K': pygame.image.load("sprites/whiteKing.png"),
@@ -245,6 +317,7 @@ class Board():
         self.board_surf = self.create_board_surf()
         for c in 'pnbrqke':
             self.position_value_map[c] = self.position_value_map[c.upper()][::-1]
+        return self
 
 
     def make_pygame_rect(self, x, y, offset=0):
