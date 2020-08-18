@@ -2,6 +2,7 @@
 import pygame
 import chess
 import chess.polyglot
+import time
 
 class Square():
     def __init__(self, fen_char=None, x=None, y=None, can_use=False):
@@ -47,12 +48,12 @@ class Game():
         self.game_intro()
 
 
-    def chess_game_loop(self, ai):
+    def chess_game_loop(self, ai=None, color=None):
         initial_square = Square()
         drop_square = Square()
         # False for ai with white pieces
-        white = True
-        player_turn = True
+        white = color
+        player_turn = color
         white_maximizing = not player_turn
         value = 0
         square_under_mouse = Square(None, None, None, False)
@@ -61,7 +62,7 @@ class Game():
         while True:
             if ai and (not player_turn and not self.board.board_text.is_game_over()):
                 opening_moves = []
-                with chess.polyglot.open_reader("Eman.bin") as reader:
+                with chess.polyglot.open_reader("eman.bin") as reader:
                     for entry in reader.find_all(self.board.board_text):
                         opening_moves.append(entry.move)
                 if len(opening_moves) > 0:
@@ -88,7 +89,8 @@ class Game():
                 events = pygame.event.get()
                 for e in events:
                     if e.type == pygame.QUIT:
-                        return
+                        self.game_init(self.screen_width, self.screen_height)
+                        self.game_intro()
                     if e.type == pygame.MOUSEBUTTONDOWN:
                         if square_under_mouse.can_use:
                             initial_square.set_square(square_under_mouse.fen_char,
@@ -149,14 +151,44 @@ class Game():
         text_surface = font.render(text, True, self.black)
         return text_surface, text_surface.get_rect()
 
-    def button(self, msg,x,y,w,h,ic,ac,action=None, ai=None):
+    def select_color(self, ai=None, color=None, action=None):
+        time.sleep(0.1)
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    quit()
+            top_gap = self.screen_height // 3
+            bottom_gap = self.screen_height // 6
+            x = (self.screen_width//4) 
+            rect_total_height = self.screen_height - (top_gap + bottom_gap)
+            rect_height = rect_total_height // 3
+            gap =  rect_height // 6
+            rect_height -= gap
+            y = top_gap
+            rect_height = 50
+            large_text = pygame.font.SysFont("comicsansms",70)
+            text_surf, text_rect = self.text_objects("Select your color", large_text)
+            text_rect.center = ((self.screen_width//2),(top_gap//2))
+            self.game_display.fill(self.beige)
+            self.game_display.blit(text_surf, text_rect)
+            self.button("White",x,y,self.screen_width//2,rect_height,self.grey,self.bright_green,self.chess_game_loop, ai=ai, color=True)
+            y += 100
+            self.button("Black",x,y,self.screen_width//2,rect_height,self.grey,self.bright_green,self.chess_game_loop, ai=ai, color=False)
+            y += 100
+            self.button("Back to menu",x,y,self.screen_width//2,rect_height,self.grey,self.bright_green,self.game_intro)
+            pygame.display.update()
+            self.clock.tick(15)
+
+    def button(self, msg,x,y,w,h,ic,ac,action=None, ai=None, color=None):
         mouse = pygame.mouse.get_pos()
         click = pygame.mouse.get_pressed()
         if x+w > mouse[0] > x and y+h > mouse[1] > y:
             pygame.draw.rect(self.game_display, ac,(x,y,w,h))
 
             if click[0] == 1 and action != None:
-                action(ai)
+                time.sleep(0.1)
+                action(ai=ai, color=color)
         else:
             pygame.draw.rect(self.game_display, ic,(x,y,w,h))
 
@@ -166,10 +198,8 @@ class Game():
         self.game_display.blit(text_surf, textRect)
 
 
-    def game_intro(self):
-
+    def game_intro(self, **kwargs):
         intro = True
-
         while intro:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -192,9 +222,9 @@ class Game():
             text_rect.center = ((self.screen_width//2),(top_gap//2))
             self.game_display.blit(text_surf, text_rect)
 
-            self.button("Player vs Player",x,y,self.screen_width//2,rect_height,self.grey,self.bright_green,self.chess_game_loop, ai=False)
+            self.button("Player vs Player",x,y,self.screen_width//2,rect_height,self.grey,self.bright_green,self.chess_game_loop, ai=False, color=True)
             y += gap + rect_height
-            self.button("Player vs Ai",x,y,self.screen_width//2,rect_height,self.grey,self.bright_green,self.chess_game_loop, ai=True)
+            self.button("Player vs Ai",x,y,self.screen_width//2,rect_height,self.grey,self.bright_green,self.select_color, ai=True)
             y += gap + rect_height
             self.button("Settings",x,y,self.screen_width//2,rect_height,self.grey,self.bright_green,self.chess_game_loop)
             y += gap + rect_height
@@ -203,7 +233,7 @@ class Game():
             pygame.display.update()
             self.clock.tick(15)
 
-    def quitgame(self):
+    def quitgame(self, **kwargs):
         pygame.quit()
         quit()
 
