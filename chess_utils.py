@@ -226,7 +226,7 @@ class Game():
             y += gap + rect_height
             self.button("Player vs Ai",x,y,self.screen_width//2,rect_height,self.grey,self.bright_green,self.select_color, ai=True)
             y += gap + rect_height
-            self.button("Settings",x,y,self.screen_width//2,rect_height,self.grey,self.bright_green,self.chess_game_loop)
+            self.button("Settings",x,y,self.screen_width//2,rect_height,self.grey,self.bright_green,self.game_intro)
             y += gap + rect_height
             self.button("Exit",x,y,self.screen_width//2,rect_height,self.grey,self.bright_red,self.quitgame)
 
