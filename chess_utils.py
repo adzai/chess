@@ -1065,7 +1065,7 @@ class Board:
                         knight_rect,
                         bishop_rect,
                         button_up=True,
-                    )
+                   )
                     return promotion_piece
             clock.tick(60)
 
@@ -1111,13 +1111,18 @@ class Board:
                     best_move,
                 )
                 if self.board_text.is_checkmate():
-                    ev += 501
-                if self.board_text.is_check():
+                    ev += 10000
+                elif self.board_text.is_check():
                     ev += 15
                 self.board_text.pop()
                 if ev > max_ev:
                     best_move = str(move)
                     max_ev = ev
+                if self.board_text.can_claim_threefold_repetition():
+                    if max_ev < -500:
+                        max_ev += 500
+                    else:
+                        max_ev -= 1000
                 alpha = max(alpha, max_ev)
                 if alpha >= beta:
                     break
@@ -1136,11 +1141,16 @@ class Board:
                     best_move,
                 )
                 if self.board_text.is_checkmate():
-                    ev -= 501
+                    ev -= 10000
                 self.board_text.pop()
                 if ev < min_ev:
                     best_move = str(move)
                     min_ev = ev
+                if self.board_text.can_claim_threefold_repetition():
+                    if min_ev > 500:
+                        min_ev -= 500
+                    else:
+                        min_ev += 1000
                 beta = min(beta, min_ev)
                 if beta <= alpha:
                     break
