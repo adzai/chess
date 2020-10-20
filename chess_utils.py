@@ -73,18 +73,12 @@ class Game:
                     ai_played_square = str(opening_moves[0])[2:4]
                 else:
                     mv = self.board.minimax(
-                        4, -10000, 10000, True, 4, white_maximizing)
+                        4, -10000, 10000, white_maximizing, 4, white_maximizing)
                     value = mv[0]
                     print("Val:", value)
                     print("Move:", mv[1])
                     ai_played_square = mv[1][2:4]
                     self.board.board_text.push_uci(mv[1])
-                    white_mv = self.board.minimax(3, -10000, 10000, 3, True, True)
-                    print(
-                        f"White_recommended move: \
-                        {white_mv[1]}, value: {white_mv[0]}"
-                    )
-                white = not white
                 player_turn = not player_turn
                 if self.board.board_text.is_game_over():
                     self.board.board_surf.blit(
@@ -122,12 +116,11 @@ class Game:
                                         # promoting and draw the promotion
                                         # choice menu
                                         uci = uci[:-1] + self.board.promotion_loop(
-                                            self.screen, white
+                                            self.screen, player_turn
                                         )
                                     promotion = False
                                     self.board.board_text.push_uci(uci)
                                     self.board.rect_board = self.board.fen_to_board()
-                                    white = not white
                                     player_turn = not player_turn
                                 if self.board.board_text.is_game_over():
                                     self.board.board_surf.blit(
@@ -150,7 +143,8 @@ class Game:
             drop_square = self.board.draw_drag(self.screen, initial_square)
             # draw a req square around the king if he is in check
             if self.board.board_text.is_check():
-                if white:
+                side = player_turn if not white else not player_turn
+                if side:
                     self.board.draw_king_check(self.screen, "k")
                 else:
                     self.board.draw_king_check(self.screen, "K")
