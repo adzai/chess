@@ -1145,7 +1145,7 @@ class Ai:
                 if ev < min_ev:
                     best_move = str(move)
                     min_ev = ev
-                if board.board_text.can_claim_threefold_repetition():
+                if board.board_text.can_claim_threefold_repetition() or board.board_text.is_stalemate():
                     if min_ev > 500:
                         min_ev -= 5000
                     else:
