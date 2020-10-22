@@ -60,6 +60,7 @@ class Game:
         value = 0
         square_under_mouse = Square(None, None, None, False)
         last_square = None
+        ai = Ai()
         ai_played_square = None
         while True:
             if ai and (not player_turn and not
@@ -72,8 +73,7 @@ class Game:
                     self.board.board_text.push(opening_moves[0])
                     ai_played_square = str(opening_moves[0])[2:4]
                 else:
-                    mv = self.board.minimax(
-                        4, -10000, 10000, white_maximizing, 4, white_maximizing)
+                    mv = ai.get_move(self.board, white_maximizing)
                     value = mv[0]
                     print("Val:", value)
                     print("Move:", mv[1])
@@ -1088,7 +1088,74 @@ class Board:
                     return promotion_piece
             clock.tick(60)
 
-    def static_eval(self, fen_str, white_maximizing):
+
+class Ai:
+    def __init__(self):
+        self.depth = 3
+        self.best_move = ""
+        self.value = 0
+
+    def get_move(self, board, white_maximizing):
+        self.minimax(board, white_maximizing, self.depth, True, -10000, 10000)
+        return self.value, self.best_move
+
+    def minimax(self, board, white_maximizing, depth, maximizing_player, alpha, beta):
+        if depth == 0 or board.board_text.is_game_over():
+            return self.static_eval(board, board.board_text.fen(), white_maximizing)
+        elif maximizing_player:
+            max_ev = -1000000
+            # could be parallelized for the first layer maybe
+            for move in board.board_text.legal_moves:
+                board.board_text.push(move)
+                if board.board_text.is_checkmate() and depth == self.depth:
+                    print("mate")
+                    board.board_text.pop()
+                    self.best_move = str(move)
+                    self.value = 100000
+                    return 100000
+                ev = self.minimax(board, white_maximizing, depth-1, not maximizing_player, alpha, beta)
+                if board.board_text.is_checkmate():
+                    ev += 10000
+                elif board.board_text.is_check():
+                    ev += 15
+                board.board_text.pop()
+                if ev > max_ev:
+                    best_move = str(move)
+                    max_ev = ev
+                if board.board_text.can_claim_threefold_repetition() or board.board_text.is_stalemate():
+                    if max_ev < -500:
+                        max_ev += 500
+                    else:
+                        max_ev -= 10000
+                alpha = max(alpha, max_ev)
+                if alpha >= beta:
+                    break
+            if depth == self.depth:
+                self.best_move = best_move
+                self.value = max_ev
+            return max_ev
+        else:
+            min_ev = 1000000
+            for move in board.board_text.legal_moves:
+                board.board_text.push(move)
+                ev = self.minimax(board, white_maximizing, depth-1, not maximizing_player, alpha, beta)
+                if board.board_text.is_checkmate():
+                    ev -= 10000
+                board.board_text.pop()
+                if ev < min_ev:
+                    best_move = str(move)
+                    min_ev = ev
+                if board.board_text.can_claim_threefold_repetition():
+                    if min_ev > 500:
+                        min_ev -= 5000
+                    else:
+                        min_ev += 1000
+                beta = min(beta, min_ev)
+                if beta <= alpha:
+                    break
+            return min_ev
+
+    def static_eval(self, board, fen_str, white_maximizing):
         white, black = 0, 0
         for i, char in enumerate(fen_str):
             if char == " ":
@@ -1096,81 +1163,13 @@ class Board:
                     black = -black
                 else:
                     white = -white
-                return white + black, ""
+                return white + black
             elif not char.isalpha():
                 continue
             elif char.isupper():
-                white += self.value_map[char]
-                white += self.position_value_map[char][i]
+                white += board.value_map[char]
+                white += board.position_value_map[char][i]
             else:
-                black += self.value_map[char]
-                black += self.position_value_map[char][i]
+                black += board.value_map[char]
+                black += board.position_value_map[char][i]
 
-    def minimax(
-        self, depth, alpha, beta, maximizing_player, white_maximizing, depth_setting, best_move=""
-    ):
-        if depth == 0 or self.board_text.is_game_over():
-            return self.static_eval(self.board_text.fen(), white_maximizing)
-        elif maximizing_player:
-            max_ev = -1000000
-            # could be parallelized for the first layer maybe
-            for move in self.board_text.legal_moves:
-                self.board_text.push(move)
-                if self.board_text.is_checkmate() and depth == depth_setting:
-                    print("mate")
-                    self.board_text.pop()
-                    return 100000, str(move)
-                ev, new_move = self.minimax(
-                    depth - 1,
-                    alpha,
-                    beta,
-                    not maximizing_player,
-                    white_maximizing,
-                    depth_setting,
-                    best_move,
-                )
-                if self.board_text.is_checkmate():
-                    ev += 10000
-                elif self.board_text.is_check():
-                    ev += 15
-                self.board_text.pop()
-                if ev > max_ev:
-                    best_move = str(move)
-                    max_ev = ev
-                if self.board_text.can_claim_threefold_repetition():
-                    if max_ev < -500:
-                        max_ev += 500
-                    else:
-                        max_ev -= 1000
-                alpha = max(alpha, max_ev)
-                if alpha >= beta:
-                    break
-            return max_ev, best_move
-        else:
-            min_ev = 1000000
-            for move in self.board_text.legal_moves:
-                self.board_text.push(move)
-                ev, new_move = self.minimax(
-                    depth - 1,
-                    alpha,
-                    beta,
-                    not maximizing_player,
-                    white_maximizing,
-                    depth_setting,
-                    best_move,
-                )
-                if self.board_text.is_checkmate():
-                    ev -= 10000
-                self.board_text.pop()
-                if ev < min_ev:
-                    best_move = str(move)
-                    min_ev = ev
-                if self.board_text.can_claim_threefold_repetition():
-                    if min_ev > 500:
-                        min_ev -= 500
-                    else:
-                        min_ev += 1000
-                beta = min(beta, min_ev)
-                if beta <= alpha:
-                    break
-            return min_ev, best_move
