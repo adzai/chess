@@ -1,7 +1,6 @@
 #!/bin/python
 import pygame
 import chess
-import chess.polyglot
 import time
 from ai import Ai
 
@@ -66,20 +65,12 @@ class Game:
         while True:
             if ai and (not player_turn and not
                        self.board.board_text.is_game_over()):
-                opening_moves = []
-                with chess.polyglot.open_reader("eman.bin") as reader:
-                    for entry in reader.find_all(self.board.board_text):
-                        opening_moves.append(entry.move)
-                if len(opening_moves) > 0:
-                    self.board.board_text.push(opening_moves[0])
-                    ai_played_square = str(opening_moves[0])[2:4]
-                else:
-                    mv = ai_player.get_move(white_maximizing, board=self.board)
-                    value = mv[0]
-                    print("Val:", value)
-                    print("Move:", mv[1])
-                    ai_played_square = mv[1][2:4]
-                    self.board.board_text.push_uci(mv[1])
+                mv = ai_player.get_move(white_maximizing=white_maximizing, board=self.board.board_text)
+                value = mv[0]
+                print("Val:", value)
+                print("Move:", mv[1])
+                ai_played_square = mv[1][2:4]
+                self.board.board_text.push_uci(mv[1])
                 player_turn = not player_turn
                 if self.board.board_text.is_game_over():
                     self.board.board_surf.blit(
