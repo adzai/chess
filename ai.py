@@ -27,7 +27,8 @@ class Ai:
             self.init_game(fen_str)
         else:
             self.board = board
-        with chess.polyglot.open_reader("eman.bin") as reader:
+        # TODO Clean up openings
+        with chess.polyglot.open_reader("openings.bin") as reader:
             self.opening_moves = []
             for entry in reader.find_all(self.board):
                 self.opening_moves.append(entry.move)
