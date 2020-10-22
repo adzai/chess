@@ -855,6 +855,10 @@ class Board:
     def create_board_surf(self):
         board_surf = pygame.Surface((self.tilesize * 8, self.tilesize * 8))
         dark = False
+        letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+        numbers = list(map(str, (reversed (range(1, 9)))))
+        font_size = 20
+        font = pygame.font.SysFont('arial', font_size)
         for y in range(8):
             for x in range(8):
                 rect = pygame.Rect(
@@ -864,6 +868,21 @@ class Board:
                     board_surf, pygame.Color(
                         "darkgrey" if dark else "white"), rect
                 )
+                if x == 7:
+                    textsurface = font.render(numbers[0], True, (0, 0, 0))
+                    numbers.pop(0)
+                    numbers_rect = pygame.Rect(
+                        x * self.tilesize + self.tilesize - font_size, y * self.tilesize, self.tilesize, self.tilesize)
+                    board_surf.blit(textsurface, numbers_rect)
+                if y == 7:
+                    textsurface = font.render(letters[0], True, (0, 0, 0))
+                    letters.pop(0)
+                    letters_padding = 5
+                    text_rect = pygame.Rect(
+                        x * self.tilesize, y * self.tilesize + self.tilesize - font_size - letters_padding, self.tilesize, self.tilesize)
+                    board_surf.blit(textsurface, text_rect)
+
+
                 dark = not dark
             dark = not dark
         return board_surf
