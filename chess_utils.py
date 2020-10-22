@@ -61,7 +61,7 @@ class Game:
         value = 0
         square_under_mouse = Square(None, None, None, False)
         last_square = None
-        ai = Ai()
+        ai_player = Ai()
         ai_played_square = None
         while True:
             if ai and (not player_turn and not
@@ -74,7 +74,7 @@ class Game:
                     self.board.board_text.push(opening_moves[0])
                     ai_played_square = str(opening_moves[0])[2:4]
                 else:
-                    mv = ai.get_move(self.board, white_maximizing)
+                    mv = ai_player.get_move(self.board, white_maximizing)
                     value = mv[0]
                     print("Val:", value)
                     print("Move:", mv[1])
@@ -116,9 +116,16 @@ class Game:
                                         # add extra uci notation if a player is
                                         # promoting and draw the promotion
                                         # choice menu
-                                        uci = uci[:-1] + self.board.promotion_loop(
-                                            self.screen, player_turn
-                                        )
+                                        # TODO improve knowing color of current turn player 
+                                        if not white: 
+                                            uci = uci[:-1] + self.board.promotion_loop(
+                                                self.screen, not player_turn
+                                            )
+                                        else:
+                                            uci = uci[:-1] + self.board.promotion_loop(
+                                                self.screen, player_turn
+                                            )
+
                                     promotion = False
                                     self.board.board_text.push_uci(uci)
                                     self.board.rect_board = self.board.fen_to_board()
@@ -618,7 +625,7 @@ class Board:
 
 class Ai:
     def __init__(self):
-        self.depth = 3
+        self.depth = 1
         self.best_move = ""
         self.value = 0
 
