@@ -184,12 +184,16 @@ class Game:
 
     def undo_move(self, board, ai=None):
         try:
-            board.board_text.pop()
-            self.move_history.pop()
-            if ai:
+            # > 2 so that you can't take ai's turn
+            # TODO Find something better
+            if ai and len(self.move_history) > 2:
                 board.board_text.pop()
                 self.move_history.pop()
-            else:
+                board.board_text.pop()
+                self.move_history.pop()
+            elif not ai:
+                board.board_text.pop()
+                self.move_history.pop()
                 self.color_playing = not self.color_playing
         except Exception as e:
             print(e)
