@@ -49,6 +49,8 @@ class Game:
         self.move_history = []
         self.redo_buffer = []
         self.color_playing = None
+        self.last_square = None
+        self.ai_played_square = None
 
     def game_loop(self, board):
         pygame.display.set_caption("PyChess")
@@ -64,19 +66,18 @@ class Game:
         white_maximizing = not player_turn
         value = 0
         square_under_mouse = Square(None, None, None, False)
-        last_square = None
         ai_player = Ai()
-        ai_played_square = None
         ######## TESTING FONT UNDER BOARD ########
         ######## TESTING FONT UNDER BOARD ########
         while True:
             if ai and (not player_turn and not
                        self.board.board_text.is_game_over()):
-                mv = ai_player.get_move(white_maximizing=white_maximizing, board=self.board.board_text)
+                mv = ai_player.get_move(
+                    white_maximizing=white_maximizing, board=self.board.board_text)
                 value = mv[0]
                 print("Val:", value)
                 print("Move:", mv[1])
-                ai_played_square = mv[1][2:4]
+                self.ai_played_square = mv[1][2:4]
                 self.board.board_text.push_uci(mv[1])
                 self.redo_buffer = []
                 self.move_history.append(mv[1])
@@ -112,13 +113,13 @@ class Game:
                                     in self.board.board_text.legal_moves
                                 )
                                 if legal:
-                                    last_square = drop_square
+                                    self.last_square = drop_square
                                     if promotion:
                                         # add extra uci notation if a player is
                                         # promoting and draw the promotion
                                         # choice menu
-                                        # TODO improve knowing color of current turn player 
-                                        if not white: 
+                                        # TODO improve knowing color of current turn player
+                                        if not white:
                                             uci = uci[:-1] + self.board.promotion_loop(
                                                 self.screen, not player_turn
                                             )
@@ -129,6 +130,7 @@ class Game:
 
                                     promotion = False
                                     self.board.board_text.push_uci(uci)
+                                    self.last_square = uci[2:4]
                                     self.redo_buffer = []
                                     self.move_history.append(uci)
                                     self.board.rect_board = self.board.fen_to_board()
@@ -155,7 +157,7 @@ class Game:
             )
             self.button(
                 "Redo",
-                200,
+                150,
                 740,
                 self.screen_width // 8,
                 720//8,
@@ -165,15 +167,26 @@ class Game:
                 board=self.board,
                 ai=ai
             )
+            self.button(
+                "Flip",
+                300,
+                740,
+                self.screen_width // 8,
+                720//8,
+                self.grey,
+                self.bright_green,
+                action=self.flip_board,
+                board=self.board
+            )
             self.screen.blit(self.board.board_surf, self.board.board_pos)
-            if last_square and not player_turn:
-                self.board.draw_last_piece_player(self.screen, last_square)
+            if self.last_square and not player_turn:
+                self.board.draw_last_piece(self.screen, self.last_square)
             if ai:
-                if ai_played_square and player_turn:
-                    self.board.draw_last_piece_ai(
-                        self.screen, ai_played_square)
-            elif last_square and player_turn:
-                self.board.draw_last_piece_player(self.screen, last_square)
+                if self.ai_played_square and player_turn:
+                    self.board.draw_last_piece(
+                        self.screen, self.ai_played_square)
+            elif self.last_square and player_turn:
+                self.board.draw_last_piece(self.screen, self.last_square)
 
             self.board.draw_pieces(self.screen)
             self.board.draw_selector(self.screen, square_under_mouse)
@@ -188,12 +201,17 @@ class Game:
             pygame.display.flip()
             self.clock.tick(60)
 
+    def flip_board(self, board=None, **kwargs):
+        board.flip = not board.flip
+        self.board.board_surf = self.board.create_board_surf()
+        self.board.rect_board = self.board.fen_to_board()
+
     def move_displayer(self, player_turn):
         color = "white" if player_turn else "black"
         font = pygame.font.SysFont('arial', 30)
         textsurface = font.render(f"Move: {color}", True, (0, 0, 0))
         rect = pygame.Rect(500, 765, 720//8, 720//8)
-        text_display = pygame.display.set_mode((720, 840)) 
+        text_display = pygame.display.set_mode((720, 840))
         text_display.fill(self.light_grey)
         text_display.blit(textsurface, rect)
 
@@ -205,10 +223,13 @@ class Game:
             self.board = self.board.board_init(history=new_history)
             self.board.draw_pieces(self.screen)
             self.move_history = new_history
+            if ai:
+                self.ai_played_square = self.move_history[-1][2:4]
+            else:
+                self.last_square = self.move_history[-1][2:4]
             self.redo_buffer = new_redo_buffer
         except Exception as e:
             print(e)
-
 
     def undo_move(self, board, ai=None):
         try:
@@ -216,19 +237,22 @@ class Game:
             # TODO Find something better
             if ai and len(self.move_history) > 2:
                 board.board_text.pop()
-                self.redo_buffer = [(self.move_history.pop())] + self.redo_buffer
+                self.redo_buffer = [
+                    (self.move_history.pop())] + self.redo_buffer
                 board.board_text.pop()
-                self.redo_buffer = [(self.move_history.pop())] + self.redo_buffer
+                self.redo_buffer = [
+                    (self.move_history.pop())] + self.redo_buffer
+                self.ai_played_square = self.move_history[-1][2:4]
             elif not ai:
                 board.board_text.pop()
-                self.redo_buffer = [(self.move_history.pop())] + self.redo_buffer
+                self.redo_buffer = [
+                    (self.move_history.pop())] + self.redo_buffer
+                self.last_square = self.move_history[-1][2:4]
                 self.color_playing = not self.color_playing
         except Exception as e:
             print(e)
         self.board = self.board.board_init(history=self.move_history)
         self.board.draw_pieces(self.screen)
-
-
 
     def text_objects(self, text, font):
         text_surface = font.render(text, True, self.black)
@@ -399,6 +423,7 @@ class Board:
         self.king_squares = {"k": [0, 0], "K": [0, 0]}
         self.tilesize = surface / 8
         self.board_pos = board_pos
+        self.flip = False
         self.sprites = {
             "P": pygame.image.load("sprites/whitePawn.png"),
             "K": pygame.image.load("sprites/whiteKing.png"),
@@ -439,7 +464,8 @@ class Board:
 
     # Populates the board matrix with fen notation
     def fen_to_board(self):
-        fen_str = self.board_text.fen()
+        fen_str = self.board_text.fen().split(" ")[0]
+        fen_str = fen_str[::-1] if self.flip else fen_str
         board = []
         new_fen_str = ""
         for char in fen_str:
@@ -467,7 +493,9 @@ class Board:
         board_surf = pygame.Surface((self.tilesize * 8, self.tilesize * 8))
         dark = False
         letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
-        numbers = list(map(str, (reversed (range(1, 9)))))
+        letters = letters[::-1] if self.flip else letters
+        numbers = list(map(str, (reversed(range(1, 9)))))
+        numbers = numbers[::-1] if self.flip else numbers
         font_size = 20
         font = pygame.font.SysFont('arial', font_size)
         for y in range(8):
@@ -492,7 +520,6 @@ class Board:
                     text_rect = pygame.Rect(
                         x * self.tilesize, y * self.tilesize + self.tilesize - font_size - letters_padding, self.tilesize, self.tilesize)
                     board_surf.blit(textsurface, text_rect)
-
 
                 dark = not dark
             dark = not dark
@@ -519,17 +546,11 @@ class Board:
     # Takes x and y coordinates from the board matrix
     # and transforms them into the uci notation
     def board_to_uci(self, initial_square, drop_square):
-        column_to_letter = {
-            0: "a",
-            1: "b",
-            2: "c",
-            3: "d",
-            4: "e",
-            5: "f",
-            6: "g",
-            7: "h",
-        }
-        row_convert = {0: 8, 1: 7, 2: 6, 3: 5, 4: 4, 5: 3, 6: 2, 7: 1}
+        letters = ["a", "b", "c", "d", "e", "f", "g", "h"]
+        nums1 = reversed(range(0, 8)) if self.flip else range(0, 8)
+        column_to_letter = {k: v for k, v in zip(nums1, letters)}
+        nums2 = reversed(range(0, 9)) if self.flip else range(1, 9)
+        row_convert = {k: v for k, v in zip(reversed(range(0, 8)), nums2)}
         lt1_pos = str(column_to_letter[initial_square.x])
         row1_pos = str(row_convert[initial_square.y])
         lt2_pos = str(column_to_letter[drop_square.x])
@@ -551,18 +572,12 @@ class Board:
             self.board_pos[0] + y, self.board_pos[1] + x)
         pygame.draw.rect(screen, (255, 0, 0, 50), rect, 2)
 
-    def draw_last_piece_ai(self, screen, square):
-        letter_to_column = {
-            "a": 0,
-            "b": 1,
-            "c": 2,
-            "d": 3,
-            "e": 4,
-            "f": 5,
-            "g": 6,
-            "h": 7,
-        }
-        row_convert = {8: 0, 7: 1, 6: 2, 5: 3, 4: 4, 3: 5, 2: 6, 1: 7}
+    def draw_last_piece(self, screen, square):
+        letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+        nums1 = reversed(range(0, 8)) if self.flip else range(0, 8)
+        letter_to_column = {k: v for k, v in zip(letters, nums1)}
+        nums2 = reversed(range(0, 9)) if self.flip else range(1, 9)
+        row_convert = {k: v for k, v in zip(nums2, reversed(range(0, 8)))}
         x = letter_to_column[square[0]]
         y = row_convert[int(square[1])]
         rect = self.make_pygame_rect(
@@ -572,6 +587,7 @@ class Board:
     def draw_last_piece_player(self, screen, square):
         x = square.x
         y = square.y
+        print(x, y)
         rect = self.make_pygame_rect(
             self.board_pos[0] + x, self.board_pos[1] + y)
         pygame.draw.rect(screen, (0, 0, 0, 50), rect, 2)
@@ -695,6 +711,6 @@ class Board:
                         knight_rect,
                         bishop_rect,
                         button_up=True,
-                   )
+                    )
                     return promotion_piece
             clock.tick(60)
