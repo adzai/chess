@@ -46,6 +46,8 @@ class Game:
         )
         self.board = Board(self.screen_width, (0, 0))
         self.board = self.board.board_init()
+        self.move_history = []
+        self.color_playing = None
 
     def game_loop(self, board):
         pygame.display.set_caption("PyChess")
@@ -57,6 +59,7 @@ class Game:
         # False for ai with white pieces
         white = color
         player_turn = color
+        self.color_playing = True
         white_maximizing = not player_turn
         value = 0
         square_under_mouse = Square(None, None, None, False)
@@ -64,11 +67,6 @@ class Game:
         ai_player = Ai()
         ai_played_square = None
         ######## TESTING FONT UNDER BOARD ########
-        textsurface = self.font.render("Test", True, (0, 0, 0))
-        rect = pygame.Rect(0, 720, 720//8, 720//8)
-        text_display = pygame.display.set_mode((720, 840)) 
-        text_display.fill(self.light_grey)
-        text_display.blit(textsurface, rect)
         ######## TESTING FONT UNDER BOARD ########
         while True:
             if ai and (not player_turn and not
@@ -79,7 +77,9 @@ class Game:
                 print("Move:", mv[1])
                 ai_played_square = mv[1][2:4]
                 self.board.board_text.push_uci(mv[1])
+                self.move_history.append(mv[1])
                 player_turn = not player_turn
+                self.color_playing = not self.color_playing
                 if self.board.board_text.is_game_over():
                     self.board.board_surf.blit(
                         self.check_mate_text, self.check_mate_text_rect
@@ -127,14 +127,29 @@ class Game:
 
                                     promotion = False
                                     self.board.board_text.push_uci(uci)
+                                    self.move_history.append(uci)
                                     self.board.rect_board = self.board.fen_to_board()
                                     player_turn = not player_turn
+                                    self.color_playing = not self.color_playing
                                 if self.board.board_text.is_game_over():
                                     self.board.board_surf.blit(
                                         self.check_mate_text, self.check_mate_text_rect
                                     )
                         initial_square.can_use = False
                         drop_square.can_use = False
+            self.move_displayer(self.color_playing)
+            self.button(
+                "Undo",
+                10,
+                740,
+                self.screen_width // 8,
+                720//8,
+                self.grey,
+                self.bright_green,
+                action=self.undo_move,
+                board=self.board,
+                ai=ai
+            )
             self.screen.blit(self.board.board_surf, self.board.board_pos)
             if last_square and not player_turn:
                 self.board.draw_last_piece_player(self.screen, last_square)
@@ -157,6 +172,28 @@ class Game:
                     self.board.draw_king_check(self.screen, "K")
             pygame.display.flip()
             self.clock.tick(60)
+
+    def move_displayer(self, player_turn):
+        color = "white" if player_turn else "black"
+        font = pygame.font.SysFont('arial', 30)
+        textsurface = font.render(f"Move: {color}", True, (0, 0, 0))
+        rect = pygame.Rect(500, 765, 720//8, 720//8)
+        text_display = pygame.display.set_mode((720, 840)) 
+        text_display.fill(self.light_grey)
+        text_display.blit(textsurface, rect)
+
+    def undo_move(self, board, ai=None):
+        try:
+            board.board_text.pop()
+            if ai:
+                board.board_text.pop()
+            else:
+                self.color_playing = not self.color_playing
+        except:
+            print("empty board")
+        self.board = self.board.board_init(board.board_text.fen())
+        self.board.draw_pieces(self.screen)
+
 
     def text_objects(self, text, font):
         text_surface = font.render(text, True, self.black)
@@ -223,7 +260,7 @@ class Game:
             pygame.display.update()
             self.clock.tick(15)
 
-    def button(self, msg, x, y, w, h, ic, ac, action=None, ai=None, color=None):
+    def button(self, msg, x, y, w, h, ic, ac, action=None, ai=None, color=None, board=None):
         mouse = pygame.mouse.get_pos()
         click = pygame.mouse.get_pressed()
         if x + w > mouse[0] > x and y + h > mouse[1] > y:
@@ -231,7 +268,10 @@ class Game:
 
             if click[0] == 1 and action != None:
                 time.sleep(0.1)
-                action(ai=ai, color=color)
+                if board:
+                    action(board=board, ai=ai)
+                else:
+                    action(ai=ai, color=color)
         else:
             pygame.draw.rect(self.game_display, ic, (x, y, w, h))
 
@@ -339,8 +379,11 @@ class Board:
             "r": pygame.image.load("sprites/blackRook.png"),
         }
 
-    def board_init(self):
-        self.board_text = chess.Board()
+    def board_init(self, fen_str=None):
+        if fen_str:
+            self.board_text = chess.Board(fen_str)
+        else:
+            self.board_text = chess.Board()
         self.rect_board = self.fen_to_board()
         self.board_surf = self.create_board_surf()
         return self
