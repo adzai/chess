@@ -47,6 +47,7 @@ class Game:
         self.board = Board(self.screen_width, (0, 0))
         self.board = self.board.board_init()
         self.move_history = []
+        self.redo_buffer = []
         self.color_playing = None
 
     def game_loop(self, board):
@@ -77,6 +78,7 @@ class Game:
                 print("Move:", mv[1])
                 ai_played_square = mv[1][2:4]
                 self.board.board_text.push_uci(mv[1])
+                self.redo_buffer = []
                 self.move_history.append(mv[1])
                 player_turn = not player_turn
                 self.color_playing = not self.color_playing
@@ -127,6 +129,7 @@ class Game:
 
                                     promotion = False
                                     self.board.board_text.push_uci(uci)
+                                    self.redo_buffer = []
                                     self.move_history.append(uci)
                                     self.board.rect_board = self.board.fen_to_board()
                                     player_turn = not player_turn
@@ -147,6 +150,18 @@ class Game:
                 self.grey,
                 self.bright_green,
                 action=self.undo_move,
+                board=self.board,
+                ai=ai
+            )
+            self.button(
+                "Redo",
+                200,
+                740,
+                self.screen_width // 8,
+                720//8,
+                self.grey,
+                self.bright_green,
+                action=self.redo_move,
                 board=self.board,
                 ai=ai
             )
@@ -182,18 +197,31 @@ class Game:
         text_display.fill(self.light_grey)
         text_display.blit(textsurface, rect)
 
+    def redo_move(self, board=None, ai=None):
+        try:
+            num = 2 if ai else 1
+            new_history = self.move_history + self.redo_buffer[:num]
+            new_redo_buffer = self.redo_buffer[num:]
+            self.board = self.board.board_init(history=new_history)
+            self.board.draw_pieces(self.screen)
+            self.move_history = new_history
+            self.redo_buffer = new_redo_buffer
+        except Exception as e:
+            print(e)
+
+
     def undo_move(self, board, ai=None):
         try:
             # > 2 so that you can't take ai's turn
             # TODO Find something better
             if ai and len(self.move_history) > 2:
                 board.board_text.pop()
-                self.move_history.pop()
+                self.redo_buffer = [(self.move_history.pop())] + self.redo_buffer
                 board.board_text.pop()
-                self.move_history.pop()
+                self.redo_buffer = [(self.move_history.pop())] + self.redo_buffer
             elif not ai:
                 board.board_text.pop()
-                self.move_history.pop()
+                self.redo_buffer = [(self.move_history.pop())] + self.redo_buffer
                 self.color_playing = not self.color_playing
         except Exception as e:
             print(e)
