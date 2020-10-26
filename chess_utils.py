@@ -72,15 +72,14 @@ class Game:
         while True:
             if ai and (not player_turn and not
                        self.board.board_text.is_game_over()):
-                mv = ai_player.get_move(
+                value, mv = ai_player.get_move(
                     white_maximizing=white_maximizing, board=self.board.board_text)
-                value = mv[0]
                 print("Val:", value)
-                print("Move:", mv[1])
-                self.ai_played_square = mv[1][2:4]
-                self.board.board_text.push_uci(mv[1])
+                print("Move:", mv)
+                self.ai_played_square = mv[2:4]
+                self.board.board_text.push_uci(mv)
                 self.redo_buffer = []
-                self.move_history.append(mv[1])
+                self.move_history.append(mv)
                 player_turn = not player_turn
                 self.color_playing = not self.color_playing
                 if self.board.board_text.is_game_over():
@@ -569,14 +568,6 @@ class Board:
         row_convert = {k: v for k, v in zip(nums2, reversed(range(0, 8)))}
         x = letter_to_column[square[0]]
         y = row_convert[int(square[1])]
-        rect = self.make_pygame_rect(
-            self.board_pos[0] + x, self.board_pos[1] + y)
-        pygame.draw.rect(screen, (0, 0, 0, 50), rect, 2)
-
-    def draw_last_piece_player(self, screen, square):
-        x = square.x
-        y = square.y
-        print(x, y)
         rect = self.make_pygame_rect(
             self.board_pos[0] + x, self.board_pos[1] + y)
         pygame.draw.rect(screen, (0, 0, 0, 50), rect, 2)
