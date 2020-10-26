@@ -24,7 +24,7 @@ class Game:
         pygame.init()
         self.screen = pygame.display.set_mode((screen_width, screen_height))
         self.clock = pygame.time.Clock()
-        self.font = pygame.font.Font("freesansbold.ttf", 40)
+        self.font = pygame.font.SysFont("arial", 40)
         self.check_mate_text = self.font.render("Game Over!",
                                                 True, (255, 0, 0))
         self.check_mate_text_rect = self.check_mate_text.get_rect(
@@ -147,7 +147,7 @@ class Game:
                 "Undo",
                 10,
                 740,
-                self.screen_width // 8,
+                self.screen_width // 8 + 30,
                 720//8,
                 self.grey,
                 self.bright_green,
@@ -159,7 +159,7 @@ class Game:
                 "Redo",
                 150,
                 740,
-                self.screen_width // 8,
+                self.screen_width // 8 + 30,
                 720//8,
                 self.grey,
                 self.bright_green,
@@ -169,9 +169,9 @@ class Game:
             )
             self.button(
                 "Flip",
-                300,
+                290,
                 740,
-                self.screen_width // 8,
+                self.screen_width // 8 + 30,
                 720//8,
                 self.grey,
                 self.bright_green,
@@ -351,8 +351,8 @@ class Game:
             bottom_gap = self.screen_height // 8
             x = self.screen_width // 4
             rect_total_height = self.screen_height - (top_gap + bottom_gap)
-            rect_height = rect_total_height // 4
-            gap = rect_height // 8
+            rect_height = rect_total_height // 3
+            gap = rect_height // 3
             rect_height -= gap
             y = top_gap
 
@@ -385,17 +385,6 @@ class Game:
                 self.bright_green,
                 self.select_color,
                 ai=True,
-            )
-            y += gap + rect_height
-            self.button(
-                "Settings",
-                x,
-                y,
-                self.screen_width // 2,
-                rect_height,
-                self.grey,
-                self.bright_green,
-                self.game_intro,
             )
             y += gap + rect_height
             self.button(
