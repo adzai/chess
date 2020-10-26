@@ -32,10 +32,11 @@ class Game:
         )
         # default settings
         self.screen_width = 720
-        self.screen_height = 720
+        self.screen_height = 820
         self.black = (0, 0, 0)
         self.white = (255, 255, 255)
         self.grey = (192, 192, 192)
+        self.light_grey = (211, 211, 211)
         self.beige = (245, 245, 220)
         self.bright_red = (255, 0, 0)
         self.bright_green = (0, 255, 0)
@@ -62,6 +63,13 @@ class Game:
         last_square = None
         ai_player = Ai()
         ai_played_square = None
+        ######## TESTING FONT UNDER BOARD ########
+        textsurface = self.font.render("Test", True, (0, 0, 0))
+        rect = pygame.Rect(0, 720, 720//8, 720//8)
+        text_display = pygame.display.set_mode((720, 840)) 
+        text_display.fill(self.light_grey)
+        text_display.blit(textsurface, rect)
+        ######## TESTING FONT UNDER BOARD ########
         while True:
             if ai and (not player_turn and not
                        self.board.board_text.is_game_over()):
@@ -239,7 +247,6 @@ class Game:
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     quit()
-
             # Calculate menu dimensions
             top_gap = self.screen_height // 4
             bottom_gap = self.screen_height // 8
