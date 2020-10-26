@@ -185,14 +185,17 @@ class Game:
     def undo_move(self, board, ai=None):
         try:
             board.board_text.pop()
+            self.move_history.pop()
             if ai:
                 board.board_text.pop()
+                self.move_history.pop()
             else:
                 self.color_playing = not self.color_playing
-        except:
-            print("empty board")
-        self.board = self.board.board_init(board.board_text.fen())
+        except Exception as e:
+            print(e)
+        self.board = self.board.board_init(history=self.move_history)
         self.board.draw_pieces(self.screen)
+
 
 
     def text_objects(self, text, font):
@@ -379,14 +382,20 @@ class Board:
             "r": pygame.image.load("sprites/blackRook.png"),
         }
 
-    def board_init(self, fen_str=None):
+    def board_init(self, fen_str=None, history=False):
         if fen_str:
             self.board_text = chess.Board(fen_str)
         else:
             self.board_text = chess.Board()
+        if history:
+            self.restore_board(history)
         self.rect_board = self.fen_to_board()
         self.board_surf = self.create_board_surf()
         return self
+
+    def restore_board(self, history):
+        for move in history:
+            self.board_text.push_uci(move)
 
     def make_pygame_rect(self, x, y, offset=0):
         return pygame.Rect(
