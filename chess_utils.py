@@ -226,6 +226,7 @@ class Game:
             new_history = self.move_history + self.redo_buffer[:num]
             new_redo_buffer = self.redo_buffer[num:]
             self.board = self.board.board_init(history=new_history)
+            self.board.current_fen = self.board.board_text.fen()
             self.board.draw_pieces(self.game_display)
             self.move_history = new_history
             if ai:
@@ -257,6 +258,7 @@ class Game:
         except Exception as e:
             print(e)
         self.board = self.board.board_init(history=self.move_history)
+        self.board.current_fen = self.board.board_text.fen()
         self.board.draw_pieces(self.game_display)
 
     def text_objects(self, text, font):
@@ -418,6 +420,7 @@ class Board:
         self.tilesize = surface / 8
         self.board_pos = board_pos
         self.flip = False
+        self.orig_fen_str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
         self.current_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
         self.sprites = {
             "P": pygame.image.load("sprites/whitePawn.png"),
@@ -457,15 +460,26 @@ class Board:
         # TODO Fix promotions
         d1 = defaultdict(int)
         d2 = defaultdict(int)
-        orig_fen_str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
         for c in self.current_fen.split(" ")[0]:
             if c.isalpha():
                 d1[c] += 1
-        for c in orig_fen_str:
+        for c in self.orig_fen_str:
             # Init with 0 if piece was taken out of fen completely
             d1[c]
             if c.isalpha():
                 d2[c] += 1
+        for k in d1:
+            if d1[k] > d2[k]:
+                self.orig_fen_str += k
+                removed_pawn = "p" if k.islower() else "P"
+                new_str = ""
+                removed = False
+                for c in self.orig_fen_str:
+                    if c == removed_pawn and not removed:
+                        removed = True
+                    else:
+                        new_str += c
+                self.orig_fen_str = new_str
         diff = {k: d2[k] - d1[k] for k in d1 if k in d2 and d1[k] != d2[k]}
         captures = []
         for k in diff:
