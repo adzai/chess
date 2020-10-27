@@ -55,7 +55,7 @@ class Game:
         self.captured_black = []
 
     def game_loop(self, board):
-        pygame.display.set_caption("PyChess")
+        pygame.display.set_caption("Chess")
         self.game_intro()
 
     def chess_game_loop(self, ai=None, color=None):
@@ -368,7 +368,7 @@ class Game:
 
             self.game_display.fill(self.beige)
             large_text = pygame.font.SysFont("comicsansms", 90)
-            text_surf, text_rect = self.text_objects("PyChess", large_text)
+            text_surf, text_rect = self.text_objects("Chess", large_text)
             text_rect.center = ((self.screen_width // 2), (top_gap // 2))
             self.game_display.blit(text_surf, text_rect)
 
