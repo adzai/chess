@@ -47,7 +47,7 @@ class Game:
         self.board = self.board.board_init()
         self.move_history = []
         self.redo_buffer = []
-        self.color_playing = None
+        self.color_playing = True
         self.last_square = None
         self.ai_played_square = None
         self.captured_white = []
@@ -63,7 +63,6 @@ class Game:
         # False for ai with white pieces
         white = color
         player_turn = color
-        self.color_playing = True
         white_maximizing = not player_turn
         value = 0
         square_under_mouse = Square(None, None, None, False)
@@ -120,14 +119,9 @@ class Game:
                                         # add extra uci notation if a player is
                                         # promoting and draw the promotion
                                         # choice menu
-                                        if not white:
-                                            uci = uci[:-1] + self.board.promotion_loop(
-                                                self.game_display, not player_turn
-                                            )
-                                        else:
-                                            uci = uci[:-1] + self.board.promotion_loop(
-                                                self.game_display, player_turn
-                                            )
+                                        uci = uci[:-1] + self.board.promotion_loop(
+                                            self.game_display, self.color_playing
+                                        )
 
                                     promotion = False
                                     self.board.board_text.push_uci(uci)
@@ -199,8 +193,7 @@ class Game:
                 self.game_display, initial_square)
             # draw a req square around the king if he is in check
             if self.board.board_text.is_check():
-                side = player_turn if not white else not player_turn
-                if side:
+                if not self.color_playing:
                     self.board.draw_king_check(self.game_display, "k")
                 else:
                     self.board.draw_king_check(self.game_display, "K")
@@ -233,6 +226,7 @@ class Game:
                 self.ai_played_square = self.move_history[-1][2:4]
             else:
                 self.last_square = self.move_history[-1][2:4]
+                self.color_playing = not self.color_playing
             self.redo_buffer = new_redo_buffer
         except Exception as e:
             print(e)
