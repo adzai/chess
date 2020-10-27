@@ -1,6 +1,6 @@
 #!/bin/python
-import pygame
 import chess
+import pygame
 import time
 from collections import defaultdict
 from ai import Ai
@@ -30,9 +30,7 @@ class Game:
         self.check_mate_text = self.font.render("Game Over!",
                                                 True, (255, 0, 0))
         self.check_mate_text_rect = self.check_mate_text.get_rect(
-            center=self.game_display.get_rect().center
-        )
-        # default settings
+            center=self.game_display.get_rect().center)
         self.screen_width = screen_width
         self.screen_height = screen_height
         self.black = (0, 0, 0)
@@ -142,8 +140,7 @@ class Game:
                                 if self.board.board_text.is_game_over():
                                     self.board.board_surf.blit(
                                         self.check_mate_text,
-                                        self.check_mate_text_rect
-                                    )
+                                        self.check_mate_text_rect)
                         initial_square.can_use = False
                         drop_square.can_use = False
             self.move_displayer(self.color_playing)
@@ -191,7 +188,6 @@ class Game:
                         self.game_display, self.ai_played_square)
             elif self.last_square and player_turn:
                 self.board.draw_last_piece(self.game_display, self.last_square)
-
             self.board.draw_pieces(self.game_display)
             self.board.draw_selector(self.game_display, square_under_mouse)
             drop_square = self.board.draw_drag(
@@ -453,13 +449,12 @@ class Board:
         for move in history:
             self.board_text.push_uci(move)
             try:
-                self.board.current_fen = self.board.board_text.fen()
+                self.current_fen = self.board_text.fen()
             except Exception as e:
                 print(e)
                 ("game over")
 
     def get_number_of_captures(self):
-        # TODO Fix promotions
         d1 = defaultdict(int)
         d2 = defaultdict(int)
         for c in self.current_fen.split(" ")[0]:
@@ -629,7 +624,6 @@ class Board:
         pygame.draw.rect(screen, (0, 0, 0, 50), rect, 2)
 
     def draw_captures(self, screen):
-        # TODO Refactor capture drawing
         starting_width = 730
         rect_size = 720//8
         font = pygame.font.SysFont('arial', 30)
