@@ -19,6 +19,7 @@ class Square:
         self.y = y
         self.can_use = True
 
+
 class Game:
     def game_init(self, screen_width, screen_height):
         pygame.init()
@@ -31,8 +32,8 @@ class Game:
             center=self.screen.get_rect().center
         )
         # default settings
-        self.screen_width = 720
-        self.screen_height = 820
+        self.screen_width = screen_width
+        self.screen_height = screen_height
         self.black = (0, 0, 0)
         self.white = (255, 255, 255)
         self.grey = (192, 192, 192)
@@ -44,7 +45,7 @@ class Game:
         self.game_display = pygame.display.set_mode(
             (self.screen_width, self.screen_height)
         )
-        self.board = Board(self.screen_width, (0, 0))
+        self.board = Board(720, (0, 0))
         self.board = self.board.board_init()
         self.move_history = []
         self.redo_buffer = []
@@ -54,7 +55,7 @@ class Game:
         self.captured_white = []
         self.captured_black = []
 
-    def game_loop(self, board):
+    def game_loop(self):
         pygame.display.set_caption("Chess")
         self.game_intro()
 
@@ -69,8 +70,6 @@ class Game:
         value = 0
         square_under_mouse = Square(None, None, None, False)
         ai_player = Ai()
-        ######## TESTING FONT UNDER BOARD ########
-        ######## TESTING FONT UNDER BOARD ########
         while True:
             if ai and (not player_turn and not
                        self.board.board_text.is_game_over()):
@@ -166,7 +165,7 @@ class Game:
             )
             self.button(
                 "Redo",
-                150,
+                180,
                 740,
                 self.screen_width // 8 + 30,
                 720//8,
@@ -178,7 +177,7 @@ class Game:
             )
             self.button(
                 "Flip",
-                290,
+                350,
                 740,
                 self.screen_width // 8 + 30,
                 720//8,
@@ -219,7 +218,7 @@ class Game:
         color = "white" if player_turn else "black"
         font = pygame.font.SysFont('arial', 30)
         textsurface = font.render(f"Move: {color}", True, (0, 0, 0))
-        rect = pygame.Rect(500, 765, 720//8, 720//8)
+        rect = pygame.Rect(520, 765, 720//8, 720//8)
         text_display = pygame.display.set_mode((1000, 840))
         text_display.fill(self.light_grey)
         text_display.blit(textsurface, rect)
@@ -262,7 +261,6 @@ class Game:
             print(e)
         self.board = self.board.board_init(history=self.move_history)
         self.board.draw_pieces(self.screen)
-
 
     def text_objects(self, text, font):
         text_surface = font.render(text, True, self.black)
@@ -482,7 +480,6 @@ class Board:
                 captures.append((color, self.sprites[k]))
         return captures
 
-
     def make_pygame_rect(self, x, y, offset=0):
         return pygame.Rect(
             x * self.tilesize + offset,
@@ -613,21 +610,21 @@ class Board:
             self.board_pos[0] + x, self.board_pos[1] + y)
         pygame.draw.rect(screen, (0, 0, 0, 50), rect, 2)
 
-    def draw_pieces(self, screen):
+    def draw_captures(self, screen):
         # TODO Refactor capture drawing
+        starting_width = 730
+        rect_size = 720//8
         font = pygame.font.SysFont('arial', 30)
         textsurface_black = font.render(f"Black's captured", True, (0, 0, 0))
         textsurface_white = font.render(f"White's captured", True, (0, 0, 0))
-        rect_black = pygame.Rect(730, 50, 720//8, 720//8)
-        rect_white = pygame.Rect(730, 450, 720//8, 720//8)
-        # text_display = pygame.display.set_mode((1000, 840))
-        # text_display.fill(self.light_grey)
+        rect_black = pygame.Rect(starting_width, 50, rect_size, rect_size)
+        rect_white = pygame.Rect(starting_width, 450, rect_size, rect_size)
         screen.blit(textsurface_black, rect_black)
         screen.blit(textsurface_white, rect_white)
         captures = self.get_number_of_captures()
-        capture_x_b = 730
+        capture_x_b = starting_width
         capture_y_b = 100
-        capture_x_w = 730
+        capture_x_w = starting_width
         capture_y_w = 500
         for capture in captures:
             color, sprite = capture
@@ -636,14 +633,16 @@ class Board:
                 capture_x_b += 50
                 if capture_x_b >= 900:
                     capture_x_b = 730
-                    capture_y_b += 50 
+                    capture_y_b += 50
             else:
                 screen.blit(sprite, (capture_x_w, capture_y_w))
                 capture_x_w += 50
                 if capture_x_w >= 900:
                     capture_x_w = 730
-                    capture_y_w += 50 
+                    capture_y_w += 50
 
+    def draw_pieces(self, screen):
+        self.draw_captures(screen)
         for y in range(8):
             for x in range(8):
                 piece = self.rect_board[y][x]
