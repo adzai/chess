@@ -122,7 +122,6 @@ class Game:
                                         # add extra uci notation if a player is
                                         # promoting and draw the promotion
                                         # choice menu
-                                        # TODO improve knowing color of current turn player
                                         if not white:
                                             uci = uci[:-1] + self.board.promotion_loop(
                                                 self.screen, not player_turn
@@ -219,9 +218,8 @@ class Game:
         font = pygame.font.SysFont('arial', 30)
         textsurface = font.render(f"Move: {color}", True, (0, 0, 0))
         rect = pygame.Rect(520, 765, 720//8, 720//8)
-        text_display = pygame.display.set_mode((1000, 840))
-        text_display.fill(self.light_grey)
-        text_display.blit(textsurface, rect)
+        self.game_display.fill(self.light_grey)
+        self.game_display.blit(textsurface, rect)
 
     def redo_move(self, board=None, ai=None):
         try:
