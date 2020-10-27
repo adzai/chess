@@ -2,6 +2,7 @@
 import pygame
 import chess
 import time
+from collections import defaultdict
 from ai import Ai
 
 
@@ -17,7 +18,6 @@ class Square:
         self.x = x
         self.y = y
         self.can_use = True
-
 
 class Game:
     def game_init(self, screen_width, screen_height):
@@ -51,6 +51,8 @@ class Game:
         self.color_playing = None
         self.last_square = None
         self.ai_played_square = None
+        self.captured_white = []
+        self.captured_black = []
 
     def game_loop(self, board):
         pygame.display.set_caption("PyChess")
@@ -78,6 +80,7 @@ class Game:
                 print("Move:", mv)
                 self.ai_played_square = mv[2:4]
                 self.board.board_text.push_uci(mv)
+                self.board.current_fen = self.board.board_text.fen()
                 self.redo_buffer = []
                 self.move_history.append(mv)
                 player_turn = not player_turn
@@ -129,6 +132,7 @@ class Game:
 
                                     promotion = False
                                     self.board.board_text.push_uci(uci)
+                                    self.board.current_fen = self.board.board_text.fen()
                                     self.last_square = uci[2:4]
                                     self.redo_buffer = []
                                     self.move_history.append(uci)
@@ -210,7 +214,7 @@ class Game:
         font = pygame.font.SysFont('arial', 30)
         textsurface = font.render(f"Move: {color}", True, (0, 0, 0))
         rect = pygame.Rect(500, 765, 720//8, 720//8)
-        text_display = pygame.display.set_mode((720, 840))
+        text_display = pygame.display.set_mode((1000, 840))
         text_display.fill(self.light_grey)
         text_display.blit(textsurface, rect)
 
@@ -252,6 +256,7 @@ class Game:
             print(e)
         self.board = self.board.board_init(history=self.move_history)
         self.board.draw_pieces(self.screen)
+
 
     def text_objects(self, text, font):
         text_surface = font.render(text, True, self.black)
@@ -412,6 +417,7 @@ class Board:
         self.tilesize = surface / 8
         self.board_pos = board_pos
         self.flip = False
+        self.current_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
         self.sprites = {
             "P": pygame.image.load("sprites/whitePawn.png"),
             "K": pygame.image.load("sprites/whiteKing.png"),
@@ -441,6 +447,32 @@ class Board:
     def restore_board(self, history):
         for move in history:
             self.board_text.push_uci(move)
+            self.board.current_fen = self.board.board_text.fen()
+
+    def get_number_of_captures(self):
+        # TODO Fix promotions
+        d1 = defaultdict(int)
+        d2 = defaultdict(int)
+        orig_fen_str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
+        for c in self.current_fen.split(" ")[0]:
+            if c.isalpha():
+                d1[c] += 1
+        for c in orig_fen_str:
+            # Init with 0 if piece was taken out of fen completely
+            d1[c]
+            if c.isalpha():
+                d2[c] += 1
+        diff = {k: d2[k] - d1[k] for k in d1 if k in d2 and d1[k] != d2[k]}
+        captures = []
+        for k in diff:
+            for num in range(diff[k]):
+                if k.islower():
+                    color = "b"
+                else:
+                    color = "w"
+                captures.append((color, self.sprites[k]))
+        return captures
+
 
     def make_pygame_rect(self, x, y, offset=0):
         return pygame.Rect(
@@ -573,6 +605,36 @@ class Board:
         pygame.draw.rect(screen, (0, 0, 0, 50), rect, 2)
 
     def draw_pieces(self, screen):
+        # TODO Refactor capture drawing
+        font = pygame.font.SysFont('arial', 30)
+        textsurface_black = font.render(f"Black's captured", True, (0, 0, 0))
+        textsurface_white = font.render(f"White's captured", True, (0, 0, 0))
+        rect_black = pygame.Rect(730, 50, 720//8, 720//8)
+        rect_white = pygame.Rect(730, 450, 720//8, 720//8)
+        # text_display = pygame.display.set_mode((1000, 840))
+        # text_display.fill(self.light_grey)
+        screen.blit(textsurface_black, rect_black)
+        screen.blit(textsurface_white, rect_white)
+        captures = self.get_number_of_captures()
+        capture_x_b = 730
+        capture_y_b = 100
+        capture_x_w = 730
+        capture_y_w = 500
+        for capture in captures:
+            color, sprite = capture
+            if color == "b":
+                screen.blit(sprite, (capture_x_b, capture_y_b))
+                capture_x_b += 50
+                if capture_x_b >= 900:
+                    capture_x_b = 730
+                    capture_y_b += 50 
+            else:
+                screen.blit(sprite, (capture_x_w, capture_y_w))
+                capture_x_w += 50
+                if capture_x_w >= 900:
+                    capture_x_w = 730
+                    capture_y_w += 50 
+
         for y in range(8):
             for x in range(8):
                 piece = self.rect_board[y][x]
