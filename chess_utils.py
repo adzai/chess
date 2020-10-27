@@ -30,7 +30,7 @@ class Game:
         self.check_mate_text = self.font.render("Game Over!",
                                                 True, (255, 0, 0))
         self.check_mate_text_rect = self.check_mate_text.get_rect(
-            center=self.game_display.get_rect().center)
+            center=(720//2,720//2))
         self.screen_width = screen_width
         self.screen_height = screen_height
         self.black = (0, 0, 0)
@@ -358,13 +358,11 @@ class Game:
             gap = rect_height // 3
             rect_height -= gap
             y = top_gap
-
             self.game_display.fill(self.beige)
             large_text = pygame.font.SysFont("comicsansms", 90)
             text_surf, text_rect = self.text_objects("Chess", large_text)
             text_rect.center = ((self.screen_width // 2), (top_gap // 2))
             self.game_display.blit(text_surf, text_rect)
-
             self.button(
                 "Player vs Player",
                 x,
