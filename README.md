@@ -8,7 +8,7 @@ Chess GUI and simple engine written in python.
     <img src="https://user-images.githubusercontent.com/39188731/97337860-12314a00-1881-11eb-97b1-5ddaad9850a6.png" align="left" height="400" width="400">
 </p>
 
-
+<p align="left">
 ## Modes of use/play
 * Player vs Player
 * Player vs AI
@@ -26,3 +26,4 @@ GUI made with pygame
 ### AI
 Simple AI written in python using a minimax algorithm with alpha/beta pruning.
 Uses the python-chess library to generate legal moves.
+</p>
