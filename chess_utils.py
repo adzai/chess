@@ -23,13 +23,14 @@ class Square:
 class Game:
     def game_init(self, screen_width, screen_height):
         pygame.init()
-        self.screen = pygame.display.set_mode((screen_width, screen_height))
+        self.game_display = pygame.display.set_mode(
+            (screen_width, screen_height))
         self.clock = pygame.time.Clock()
         self.font = pygame.font.SysFont("arial", 40)
         self.check_mate_text = self.font.render("Game Over!",
                                                 True, (255, 0, 0))
         self.check_mate_text_rect = self.check_mate_text.get_rect(
-            center=self.screen.get_rect().center
+            center=self.game_display.get_rect().center
         )
         # default settings
         self.screen_width = screen_width
@@ -42,9 +43,6 @@ class Game:
         self.bright_red = (255, 0, 0)
         self.bright_green = (0, 255, 0)
         self.block_color = (53, 115, 255)
-        self.game_display = pygame.display.set_mode(
-            (self.screen_width, self.screen_height)
-        )
         self.board = Board(720, (0, 0))
         self.board = self.board.board_init()
         self.move_history = []
@@ -124,11 +122,11 @@ class Game:
                                         # choice menu
                                         if not white:
                                             uci = uci[:-1] + self.board.promotion_loop(
-                                                self.screen, not player_turn
+                                                self.game_display, not player_turn
                                             )
                                         else:
                                             uci = uci[:-1] + self.board.promotion_loop(
-                                                self.screen, player_turn
+                                                self.game_display, player_turn
                                             )
 
                                     promotion = False
@@ -185,26 +183,27 @@ class Game:
                 action=self.flip_board,
                 board=self.board
             )
-            self.screen.blit(self.board.board_surf, self.board.board_pos)
+            self.game_display.blit(self.board.board_surf, self.board.board_pos)
             if self.last_square and not player_turn:
-                self.board.draw_last_piece(self.screen, self.last_square)
+                self.board.draw_last_piece(self.game_display, self.last_square)
             if ai:
                 if self.ai_played_square and player_turn:
                     self.board.draw_last_piece(
-                        self.screen, self.ai_played_square)
+                        self.game_display, self.ai_played_square)
             elif self.last_square and player_turn:
-                self.board.draw_last_piece(self.screen, self.last_square)
+                self.board.draw_last_piece(self.game_display, self.last_square)
 
-            self.board.draw_pieces(self.screen)
-            self.board.draw_selector(self.screen, square_under_mouse)
-            drop_square = self.board.draw_drag(self.screen, initial_square)
+            self.board.draw_pieces(self.game_display)
+            self.board.draw_selector(self.game_display, square_under_mouse)
+            drop_square = self.board.draw_drag(
+                self.game_display, initial_square)
             # draw a req square around the king if he is in check
             if self.board.board_text.is_check():
                 side = player_turn if not white else not player_turn
                 if side:
-                    self.board.draw_king_check(self.screen, "k")
+                    self.board.draw_king_check(self.game_display, "k")
                 else:
-                    self.board.draw_king_check(self.screen, "K")
+                    self.board.draw_king_check(self.game_display, "K")
             pygame.display.flip()
             self.clock.tick(60)
 
@@ -227,7 +226,7 @@ class Game:
             new_history = self.move_history + self.redo_buffer[:num]
             new_redo_buffer = self.redo_buffer[num:]
             self.board = self.board.board_init(history=new_history)
-            self.board.draw_pieces(self.screen)
+            self.board.draw_pieces(self.game_display)
             self.move_history = new_history
             if ai:
                 self.ai_played_square = self.move_history[-1][2:4]
@@ -258,7 +257,7 @@ class Game:
         except Exception as e:
             print(e)
         self.board = self.board.board_init(history=self.move_history)
-        self.board.draw_pieces(self.screen)
+        self.board.draw_pieces(self.game_display)
 
     def text_objects(self, text, font):
         text_surface = font.render(text, True, self.black)
