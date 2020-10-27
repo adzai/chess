@@ -1,4 +1,4 @@
-# Chess GUI/engine
+# Chess
 
 Chess GUI and simple engine written in python.
 
