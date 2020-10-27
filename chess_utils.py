@@ -463,6 +463,9 @@ class Board:
             d1[c]
             if c.isalpha():
                 d2[c] += 1
+        # Handle promotions
+        # TODO Undo after promotion displays incorrect captured piece
+        # because orig_fen_str has been modified
         for k in d1:
             if d1[k] > d2[k]:
                 self.orig_fen_str += k
