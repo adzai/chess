@@ -80,7 +80,10 @@ class Game:
                 print("Move:", mv)
                 self.ai_played_square = mv[2:4]
                 self.board.board_text.push_uci(mv)
-                self.board.current_fen = self.board.board_text.fen()
+                try:
+                    self.board.current_fen = self.board.board_text.fen()
+                except:
+                    print("game over")
                 self.redo_buffer = []
                 self.move_history.append(mv)
                 player_turn = not player_turn
@@ -132,7 +135,10 @@ class Game:
 
                                     promotion = False
                                     self.board.board_text.push_uci(uci)
-                                    self.board.current_fen = self.board.board_text.fen()
+                                    try:
+                                        self.board.current_fen = self.board.board_text.fen()
+                                    except:
+                                        print("game over")
                                     self.last_square = uci[2:4]
                                     self.redo_buffer = []
                                     self.move_history.append(uci)
@@ -447,7 +453,10 @@ class Board:
     def restore_board(self, history):
         for move in history:
             self.board_text.push_uci(move)
-            self.board.current_fen = self.board.board_text.fen()
+            try:
+                self.board.current_fen = self.board.board_text.fen()
+            except:
+                ("game over")
 
     def get_number_of_captures(self):
         # TODO Fix promotions
