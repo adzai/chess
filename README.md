@@ -3,7 +3,7 @@
 Chess GUI and simple engine written in python.
 
 
-<img src="https://user-images.githubusercontent.com/39188731/97337861-13627700-1881-11eb-9eaa-ec8c56dff2f9.png" align="right" height="350" width="380">
+<img src="https://user-images.githubusercontent.com/39188731/97337861-13627700-1881-11eb-9eaa-ec8c56dff2f9.png" align="right" height="336" width="400">
 
 <img src="https://user-images.githubusercontent.com/39188731/97337860-12314a00-1881-11eb-97b1-5ddaad9850a6.png" align="center" height="350" width="350">
 
