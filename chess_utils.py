@@ -61,7 +61,6 @@ class Game:
         initial_square = Square()
         drop_square = Square()
         # False for ai with white pieces
-        white = color
         player_turn = color
         white_maximizing = not player_turn
         value = 0
@@ -71,14 +70,16 @@ class Game:
             if ai and (not player_turn and not
                        self.board.board_text.is_game_over()):
                 value, mv = ai_player.get_move(
-                    white_maximizing=white_maximizing, board=self.board.board_text)
+                    white_maximizing=white_maximizing,
+                    board=self.board.board_text)
                 print("Val:", value)
                 print("Move:", mv)
                 self.ai_played_square = mv[2:4]
                 self.board.board_text.push_uci(mv)
                 try:
                     self.board.current_fen = self.board.board_text.fen()
-                except:
+                except Exception as e:
+                    print(e)
                     print("game over")
                 self.redo_buffer = []
                 self.move_history.append(mv)
@@ -119,25 +120,29 @@ class Game:
                                         # add extra uci notation if a player is
                                         # promoting and draw the promotion
                                         # choice menu
-                                        uci = uci[:-1] + self.board.promotion_loop(
-                                            self.game_display, self.color_playing
-                                        )
-
+                                        uci = uci[:-1] + \
+                                            self.board.promotion_loop(
+                                            self.game_display,
+                                            self.color_playing)
                                     promotion = False
                                     self.board.board_text.push_uci(uci)
                                     try:
-                                        self.board.current_fen = self.board.board_text.fen()
-                                    except:
+                                        self.board.current_fen = \
+                                            self.board.board_text.fen()
+                                    except Exception as e:
+                                        print(e)
                                         print("game over")
                                     self.last_square = uci[2:4]
                                     self.redo_buffer = []
                                     self.move_history.append(uci)
-                                    self.board.rect_board = self.board.fen_to_board()
+                                    self.board.rect_board = \
+                                        self.board.fen_to_board()
                                     player_turn = not player_turn
                                     self.color_playing = not self.color_playing
                                 if self.board.board_text.is_game_over():
                                     self.board.board_surf.blit(
-                                        self.check_mate_text, self.check_mate_text_rect
+                                        self.check_mate_text,
+                                        self.check_mate_text_rect
                                     )
                         initial_square.can_use = False
                         drop_square.can_use = False
@@ -320,13 +325,14 @@ class Game:
             pygame.display.update()
             self.clock.tick(15)
 
-    def button(self, msg, x, y, w, h, ic, ac, action=None, ai=None, color=None, board=None):
+    def button(self, msg, x, y, w, h, ic, ac, action=None, ai=None,
+               color=None, board=None):
         mouse = pygame.mouse.get_pos()
         click = pygame.mouse.get_pressed()
         if x + w > mouse[0] > x and y + h > mouse[1] > y:
             pygame.draw.rect(self.game_display, ac, (x, y, w, h))
 
-            if click[0] == 1 and action != None:
+            if click[0] == 1 and action is not None:
                 time.sleep(0.1)
                 if board:
                     action(board=board, ai=ai)
@@ -415,7 +421,8 @@ class Board:
         self.board_pos = board_pos
         self.flip = False
         self.orig_fen_str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
-        self.current_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+        self.current_fen = \
+            "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
         self.sprites = {
             "P": pygame.image.load("sprites/whitePawn.png"),
             "K": pygame.image.load("sprites/whiteKing.png"),
@@ -447,7 +454,8 @@ class Board:
             self.board_text.push_uci(move)
             try:
                 self.board.current_fen = self.board.board_text.fen()
-            except:
+            except Exception as e:
+                print(e)
                 ("game over")
 
     def get_number_of_captures(self):
@@ -532,7 +540,8 @@ class Board:
         for y in range(8):
             for x in range(8):
                 rect = pygame.Rect(
-                    x * self.tilesize, y * self.tilesize, self.tilesize, self.tilesize
+                    x * self.tilesize, y * self.tilesize, self.tilesize,
+                    self.tilesize
                 )
                 pygame.draw.rect(
                     board_surf, pygame.Color(
@@ -542,14 +551,17 @@ class Board:
                     textsurface = font.render(numbers[0], True, (0, 0, 0))
                     numbers.pop(0)
                     numbers_rect = pygame.Rect(
-                        x * self.tilesize + self.tilesize - font_size, y * self.tilesize, self.tilesize, self.tilesize)
+                        x * self.tilesize + self.tilesize - font_size,
+                        y * self.tilesize, self.tilesize, self.tilesize)
                     board_surf.blit(textsurface, numbers_rect)
                 if y == 7:
                     textsurface = font.render(letters[0], True, (0, 0, 0))
                     letters.pop(0)
                     letters_padding = 5
                     text_rect = pygame.Rect(
-                        x * self.tilesize, y * self.tilesize + self.tilesize - font_size - letters_padding, self.tilesize, self.tilesize)
+                        x * self.tilesize, y * self.tilesize +
+                        self.tilesize - font_size - letters_padding,
+                        self.tilesize, self.tilesize)
                     board_surf.blit(textsurface, text_rect)
 
                 dark = not dark
@@ -590,7 +602,8 @@ class Board:
         promotion = False
         if uci[:2] == uci[2:]:
             uci = "0000"
-        elif initial_square.fen_char in "pP" and (uci[-1] == "8" or uci[-1] == "1"):
+        elif initial_square.fen_char in "pP" and (uci[-1] == "8" or
+                                                  uci[-1] == "1"):
             # placeholder promotion for checking legality of the move
             uci += "q"
             promotion = True
@@ -620,8 +633,8 @@ class Board:
         starting_width = 730
         rect_size = 720//8
         font = pygame.font.SysFont('arial', 30)
-        textsurface_black = font.render(f"Black's captured", True, (0, 0, 0))
-        textsurface_white = font.render(f"White's captured", True, (0, 0, 0))
+        textsurface_black = font.render("Black's captured", True, (0, 0, 0))
+        textsurface_white = font.render("White's captured", True, (0, 0, 0))
         rect_black = pygame.Rect(starting_width, 50, rect_size, rect_size)
         rect_white = pygame.Rect(starting_width, 450, rect_size, rect_size)
         screen.blit(textsurface_black, rect_black)
@@ -655,8 +668,8 @@ class Board:
                     if piece.isalpha():
                         s1 = self.sprites[piece]
                         pos = self.make_pygame_rect(
-                            self.board_pos[0] + x, self.board_pos[1] + y, offset=1
-                        )
+                            self.board_pos[0] + x, self.board_pos[1] + y,
+                            offset=1)
                         screen.blit(s1, s1.get_rect(center=pos.center))
 
     # Draws dragged piece and highlighting legal moves with green
@@ -684,7 +697,8 @@ class Board:
     # Draws black selectors for rects with promotion choices under the mouse,
     # returns the chosen promotion piece as a fen char
     def get_promotion_piece(
-        self, screen, queen_rect, rook_rect, knight_rect, bishop_rect, button_up=False
+        self, screen, queen_rect, rook_rect, knight_rect, bishop_rect,
+        button_up=False
     ):
         y = range(250, 410)
         queen_x = range(16, 177)
